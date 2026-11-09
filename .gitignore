@@ -1,9 +1,11 @@
 /node_modules
-/login.token
-/miniblox/1.8blockstates.txt
-/recaptcha.token
-/miniblox/minibloxblockstates.txt
+/src/miniblox/login.token
+/src/miniblox/game/1.8blockstates.txt
+/src/miniblox/recaptcha.token
+/src/miniblox/game/blockstates.txt
+/src/miniblox/game/minibloxblockstates.txt
 /bun.lock
 # xylex doesn't want ts so ig
 /.editorconfig
 package-lock.json
+/hash.txt
