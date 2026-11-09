@@ -1,7 +1,7 @@
 const Packet = require('../packet.js');
 
 module.exports = class BlockUpdatePacket extends Packet {
-	name = 'block_update'
+	name = 'block_update';
 	decode(data) {
 		return {
 			type: data.readUint16LE(1),

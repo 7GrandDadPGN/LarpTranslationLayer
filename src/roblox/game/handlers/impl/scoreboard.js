@@ -4,7 +4,7 @@ let client;
 
 const self = class TabListHandler extends Handler {
 	roblox(socket) {
-		socket.on('scoreboard', packet => {
+		socket.on('scoreboard', (packet) => {
 			// Add extra text just for no reason lol
 			if (packet.lines.length < 15) {
 				if (packet.lines.length > 0 && packet.lines[packet.lines.length - 1].replace(/\s/g, '').length > 0) {

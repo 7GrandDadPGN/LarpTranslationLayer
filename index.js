@@ -9,7 +9,7 @@ async function checkForUpdates() {
 	console.log(`\x1b[32m[*] Checking for updates...\x1b[0m`);
 
 	try {
-		const hash = fs.existsSync(HASH_PATH) ? fs.readFileSync(HASH_PATH, {encoding: 'utf8'}) : '';
+		const hash = fs.existsSync(HASH_PATH) ? fs.readFileSync(HASH_PATH, { encoding: 'utf8' }) : '';
 		const response = await fetch('https://api.github.com/repos/7GrandDadPGN/LarpTranslationLayer/branches/main', {
 			method: 'GET',
 			headers: {
@@ -32,7 +32,7 @@ async function checkForUpdates() {
 				file: ZIP_PATH
 			});
 
-			fs.rmSync('./src', {recursive: true});
+			fs.rmSync('./src', { recursive: true });
 
 			const zipEntries = await zipFile.entries();
 			for (const entry of Object.values(zipEntries)) {
@@ -62,10 +62,10 @@ async function main(args) {
 		console.log(`\x1b[32m[*] Skipped update check.\x1b[0m`);
 	}
 
-	(require('./src/main.js'))(args);
-};
+	require('./src/main.js')(args);
+}
 
-(async function() {
+(async function () {
 	await new Command()
 		.name('Main')
 		.description('Basic bundler dedicated for vape')

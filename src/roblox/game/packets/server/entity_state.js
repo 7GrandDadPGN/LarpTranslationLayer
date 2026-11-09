@@ -1,7 +1,7 @@
 const Packet = require('../packet.js');
 
 module.exports = class EntityStatePacket extends Packet {
-	name = 'entity_state'
+	name = 'entity_state';
 	decode(data) {
 		return {
 			id: data.readDoubleLE(1),

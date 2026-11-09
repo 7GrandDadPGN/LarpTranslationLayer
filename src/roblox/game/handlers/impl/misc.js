@@ -7,7 +7,7 @@ const self = class ChatHandler extends Handler {
 	roblox(socket) {
 		cSocket = socket;
 
-		socket.on('chat', packet => {
+		socket.on('chat', (packet) => {
 			client.write('chat', {
 				message: JSON.stringify({
 					extra: [translateText(packet.message)],
@@ -17,10 +17,10 @@ const self = class ChatHandler extends Handler {
 			});
 		});
 
-		socket.on('title', packet => {
+		socket.on('title', (packet) => {
 			client.write('title', {
 				action: packet.action,
-				text: JSON.stringify({text: translateText(packet.text)}),
+				text: JSON.stringify({ text: translateText(packet.text) }),
 				fadeIn: packet.fadeIn,
 				stay: packet.stay,
 				fadeOut: packet.fadeOut
@@ -30,9 +30,13 @@ const self = class ChatHandler extends Handler {
 	minecraft(mcClient) {
 		client = mcClient;
 
-		client.on('chat', packet => cSocket.send(packets.CLIENT.chat({
-			message: packet.message
-		})));
+		client.on('chat', (packet) =>
+			cSocket.send(
+				packets.CLIENT.chat({
+					message: packet.message
+				})
+			)
+		);
 	}
 	cleanup(requeue) {
 		client = requeue ? client : undefined;

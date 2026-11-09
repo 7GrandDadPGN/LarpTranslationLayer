@@ -4,11 +4,7 @@ const { COLOR_PALETTE, COLOR_REGEX } = require('./types/colors.js');
 function colorDistance(color1, color2, rgb) {
 	const rgb1 = rgb ? color1 : hexToRgb(color1);
 	const rgb2 = hexToRgb(color2);
-	return Math.sqrt(
-		Math.pow(rgb1.r - rgb2.r, 2) +
-		Math.pow(rgb1.g - rgb2.g, 2) +
-		Math.pow(rgb1.b - rgb2.b, 2)
-	);
+	return Math.sqrt(Math.pow(rgb1.r - rgb2.r, 2) + Math.pow(rgb1.g - rgb2.g, 2) + Math.pow(rgb1.b - rgb2.b, 2));
 }
 
 function findClosestColor(hex, rgb) {
@@ -24,7 +20,7 @@ function findClosestColor(hex, rgb) {
 	}
 
 	return COLOR_PALETTE[closestColor];
-};
+}
 
 function hexToRgb(hex) {
 	const bigint = parseInt(hex.slice(1), 16);
@@ -33,7 +29,7 @@ function hexToRgb(hex) {
 		g: (bigint >> 8) & 255,
 		b: bigint & 255
 	};
-};
+}
 
 function traverse(node, str, colorStore, parent) {
 	if (node.nodeType == 1 && node.rawTagName == 'font') {
@@ -42,13 +38,19 @@ function traverse(node, str, colorStore, parent) {
 			if (color.includes('#')) {
 				str += `\u00a7${findClosestColor(color)}`;
 			} else if (color.includes('rgb')) {
-				const split = color.substring(4, color.length - 1).split(',').map((val) => parseFloat(val));
+				const split = color
+					.substring(4, color.length - 1)
+					.split(',')
+					.map((val) => parseFloat(val));
 
-				str += `\u00a7${findClosestColor({
-					r: split[0],
-					g: split[1],
-					b: split[2]
-				}, true)}`;
+				str += `\u00a7${findClosestColor(
+					{
+						r: split[0],
+						g: split[1],
+						b: split[2]
+					},
+					true
+				)}`;
 			}
 
 			colorStore.color = true;
@@ -70,12 +72,12 @@ function traverse(node, str, colorStore, parent) {
 }
 
 module.exports = {
-	translateText: function(str) {
+	translateText: function (str) {
 		let finalStr = traverse(parse(str), '', {});
 		finalStr = finalStr.replaceAll('/c/', '\u00a7');
 		return finalStr;
 	},
-	createItem: function(data, count) {
+	createItem: function (data, count) {
 		let item = {
 			blockId: data.id,
 			itemCount: count,
@@ -114,7 +116,7 @@ module.exports = {
 					type: 'compound',
 					value: enchants
 				}
-			}
+			};
 		}
 
 		return item;

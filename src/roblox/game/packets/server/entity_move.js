@@ -1,7 +1,7 @@
 const Packet = require('../packet.js');
 
 module.exports = class EntityMovePacket extends Packet {
-	name = 'entity_move'
+	name = 'entity_move';
 	decode(data) {
 		return {
 			id: data.readDoubleLE(1),

@@ -1,7 +1,7 @@
 const Packet = require('../packet.js');
 
 module.exports = class ExperiencePacket extends Packet {
-	name = 'experience'
+	name = 'experience';
 	decode(data) {
 		return {
 			experienceBar: data.readFloatLE(1),

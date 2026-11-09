@@ -1,7 +1,7 @@
 const Packet = require('../packet.js');
 
 module.exports = class DigPacket extends Packet {
-	name = 'dig'
+	name = 'dig';
 	encode(data) {
 		const buf = Buffer.alloc(15);
 		buf.writeInt8(data.status, 1);

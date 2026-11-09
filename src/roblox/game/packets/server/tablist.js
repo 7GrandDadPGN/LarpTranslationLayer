@@ -8,7 +8,7 @@ function readString(buf) {
 }
 
 module.exports = class TablistPacket extends Packet {
-	name = 'tablist'
+	name = 'tablist';
 	decode(data) {
 		let players = [];
 		offset = 2;
@@ -25,6 +25,6 @@ module.exports = class TablistPacket extends Packet {
 			players.push(player);
 		}
 
-		return {players: players};
+		return { players: players };
 	}
 };

@@ -8,7 +8,7 @@ function readString(buf) {
 }
 
 module.exports = class ScoreboardPacket extends Packet {
-	name = 'scoreboard'
+	name = 'scoreboard';
 	decode(data) {
 		let lines = [];
 		offset = 2;
@@ -17,6 +17,6 @@ module.exports = class ScoreboardPacket extends Packet {
 			lines.push(readString(data));
 		}
 
-		return {lines: lines, title: readString(data)};
+		return { lines: lines, title: readString(data) };
 	}
 };

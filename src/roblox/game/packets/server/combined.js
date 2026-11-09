@@ -1,7 +1,7 @@
 const Packet = require('../packet.js');
 
 module.exports = class CombinedPacket extends Packet {
-	name = 'combined'
+	name = 'combined';
 	decode(data) {
 		const packets = [];
 		let offset = 3;

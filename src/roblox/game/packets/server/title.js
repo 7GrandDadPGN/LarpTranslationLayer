@@ -8,7 +8,7 @@ function readString(buf) {
 }
 
 module.exports = class TitlePacket extends Packet {
-	name = 'title'
+	name = 'title';
 	decode(data) {
 		offset = 2;
 

@@ -1,7 +1,7 @@
 const Packet = require('../packet.js');
 
 module.exports = class MovePacket extends Packet {
-	name = 'move'
+	name = 'move';
 	encode(data) {
 		const buf = Buffer.alloc(35);
 		buf.writeDoubleLE(data.pos.x, 1);

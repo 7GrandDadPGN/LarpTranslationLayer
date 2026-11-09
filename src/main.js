@@ -6,7 +6,7 @@ function selectGame(game) {
 	require('./' + game + '/index.js');
 }
 
-module.exports = async function(args) {
+module.exports = async function (args) {
 	const games = fs.readdirSync('./src').filter((entry) => !(entry.includes('.') || entry == 'base'));
 	if (args.game != undefined && games.includes(args.game)) {
 		selectGame(args.game);
@@ -15,7 +15,7 @@ module.exports = async function(args) {
 
 	const rl = readline.createInterface({
 		input: process.stdin,
-		output: process.stdout,
+		output: process.stdout
 	});
 
 	console.log(`\x1b[33m[*] Please select a game.\x1b[0m`);
@@ -26,7 +26,7 @@ module.exports = async function(args) {
 	let noOption = true;
 	while (noOption) {
 		const index = await new Promise((resolve) => {
-			rl.question('Game Index: ', response => resolve(Number.parseInt(response)));
+			rl.question('Game Index: ', (response) => resolve(Number.parseInt(response)));
 		});
 
 		if (games[index - 1] != undefined) {

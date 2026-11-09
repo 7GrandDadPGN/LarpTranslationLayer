@@ -1,5 +1,7 @@
 class Handler {
-	constructor() { this.cleanup(); }
+	constructor() {
+		this.cleanup();
+	}
 	roblox(socket) {}
 	minecraft(client) {}
 	cleanup() {}

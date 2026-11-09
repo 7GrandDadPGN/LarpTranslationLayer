@@ -6,7 +6,7 @@ const self = class GuiHandler extends Handler {
 	roblox(socket) {
 		cSocket = socket;
 
-		socket.on('window_items', packet => {
+		socket.on('window_items', (packet) => {
 			client.write('window_items', {
 				windowId: packet.windowId,
 				items: packet.slots
@@ -15,11 +15,11 @@ const self = class GuiHandler extends Handler {
 			client.write('set_slot', {
 				windowId: -1,
 				slot: 0,
-				item: {blockId: -1}
+				item: { blockId: -1 }
 			});
 		});
 
-		socket.on('set_slot', packet => {
+		socket.on('set_slot', (packet) => {
 			client.write('set_slot', {
 				windowId: packet.windowId,
 				slot: packet.slot,
@@ -27,7 +27,7 @@ const self = class GuiHandler extends Handler {
 			});
 		});
 
-		socket.on('open_window', packet => {
+		socket.on('open_window', (packet) => {
 			client.write('open_window', {
 				entityId: MCHandler.local.minecraftId,
 				windowId: packet.windowId,
@@ -40,12 +40,16 @@ const self = class GuiHandler extends Handler {
 	minecraft(mcClient) {
 		client = mcClient;
 
-		client.on('window_click', packet => cSocket.send(packets.CLIENT.click_slot({
-			windowId: packet.windowId,
-			slot: Number.parseInt(packet.slot),
-			mode: packet.mode,
-			mouseButton: packet.mouseButton
-		})));
+		client.on('window_click', (packet) =>
+			cSocket.send(
+				packets.CLIENT.click_slot({
+					windowId: packet.windowId,
+					slot: Number.parseInt(packet.slot),
+					mode: packet.mode,
+					mouseButton: packet.mouseButton
+				})
+			)
+		);
 
 		client.on('close_window', () => cSocket.send(packets.CLIENT.close_window()));
 	}

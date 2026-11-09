@@ -1,7 +1,7 @@
 const Packet = require('../packet.js');
 
 module.exports = class TeleportPacket extends Packet {
-	name = 'teleport'
+	name = 'teleport';
 	decode(data) {
 		return {
 			x: data.readDoubleLE(1),

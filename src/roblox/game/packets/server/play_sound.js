@@ -1,7 +1,7 @@
 const Packet = require('../packet.js');
 
 module.exports = class PlaySoundPacket extends Packet {
-	name = 'play_sound'
+	name = 'play_sound';
 	decode(data) {
 		const strLength = data.readUInt8(1);
 		return {

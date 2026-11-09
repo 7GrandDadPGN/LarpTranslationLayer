@@ -2,7 +2,7 @@ const handlers = require('./game/handlers/init.js');
 const packets = require('./game/packets/init.js');
 const mc = require('minecraft-protocol');
 const ws = require('ws');
-const MCHandler = new (require('../base/index.js'));
+const MCHandler = new (require('../base/index.js'))();
 
 const server = mc.createServer({
 	'online-mode': false,
@@ -34,7 +34,7 @@ function cleanup(teleport) {
 
 	connected = teleport ?? false;
 	Object.values(handlers).forEach((handler) => handler.cleanup(teleport));
-};
+}
 
 function init() {
 	if (cSocket != undefined && mClient != undefined) {
@@ -42,9 +42,9 @@ function init() {
 		Object.values(handlers).forEach((handler) => handler.roblox(cSocket));
 		cSocket.send(packets.CLIENT.login());
 	}
-};
+}
 
-server.on('playerJoin', async function(client) {
+server.on('playerJoin', async function (client) {
 	didTeleport = false;
 
 	if (connected) {
@@ -67,7 +67,7 @@ server.on('playerJoin', async function(client) {
 		return;
 	}
 
-	client.on('end', function() {
+	client.on('end', function () {
 		MCHandler.deleteWorld();
 		cleanup();
 
@@ -84,7 +84,7 @@ server.on('playerJoin', async function(client) {
 	connected = !client.ended;
 });
 
-wsServer.on('connection', function(socket) {
+wsServer.on('connection', function (socket) {
 	if (cSocket != undefined) {
 		console.log('attempted to connect while a socket exists');
 		socket.terminate();
@@ -93,12 +93,12 @@ wsServer.on('connection', function(socket) {
 
 	cSocket = socket;
 
-	socket.on('message', function(data) {
+	socket.on('message', function (data) {
 		const packet = packets.SERVER[data.readUInt8(0)];
 		if (packet) socket.emit(packet.name, packet.decode(data));
 	});
 
-	socket.on('combined', function(packetList) {
+	socket.on('combined', function (packetList) {
 		for (const data of packetList) {
 			const packet = packets.SERVER[data.readUInt8(0)];
 			if (packet) socket.emit(packet.name, packet.decode(data));
@@ -106,7 +106,7 @@ wsServer.on('connection', function(socket) {
 	});
 
 	socket.on('login', () => init());
-	socket.on('close', function() {
+	socket.on('close', function () {
 		if (socket == cSocket) {
 			cSocket = undefined;
 
