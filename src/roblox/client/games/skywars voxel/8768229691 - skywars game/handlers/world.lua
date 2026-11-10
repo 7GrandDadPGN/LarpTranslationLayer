@@ -108,6 +108,13 @@ function handler:start()
 					local prediction = skywars.InventoryController:registerItemPrediction(equipData.Name, -1)
 					if prediction then
 						skywars.Remotes[remotes.placeBlock]:fire(placePos, 0, prediction)
+						setthreadidentity(8)
+						tlayer:send('play_sound', {
+							sound = 'step.stone',
+							pos = data.pos,
+							volume = 1,
+							pitch = 1
+						})
 					else
 						self:write(0, placePos // BLOCK_SIZE, nil, mapLoaded)
 					end

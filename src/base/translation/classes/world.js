@@ -158,11 +158,6 @@ module.exports = class World {
 		}
 	}
 	addChunk(chunk) {
-		const old = this.chunks[chunk.x + ',' + chunk.z];
-		if (old != undefined) {
-			old.unload();
-		}
-
 		this.chunkQueue.clear(chunk.x, chunk.z);
 		this.chunks[chunk.x + ',' + chunk.z] = chunk;
 		chunk.world = this;

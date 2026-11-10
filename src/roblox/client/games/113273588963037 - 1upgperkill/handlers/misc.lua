@@ -4,7 +4,6 @@ local handler = {
 }
 
 local COLORS = {Color3.fromRGB(85, 255, 85), Color3.fromRGB(170, 220, 255), Color3.fromRGB(85, 255, 255), Color3.fromRGB(255, 255, 85), Color3.fromRGB(255, 170, 0), Color3.fromRGB(255, 85, 85), Color3.fromRGB(255, 85, 255), Color3.fromRGB(170, 85, 255), Color3.fromRGB(255, 170, 170), Color3.fromRGB(255, 255, 255)}
-
 local function calculateLevelColor(level)
 	return COLORS[(math.floor((math.max(1, level) - 1) / 10) % #COLORS) + 1]
 end
@@ -45,23 +44,35 @@ function handler:start()
 		end),
 		upg.ClientState.Notified:Connect(function(data)
 			task.spawn(function()
-				if data.kind == 'broadcast' and data.event == 'runWon' and data.id == (lplr.Character and lplr.Character:GetAttribute('CombatantId') or -math.huge) then
-					self:playLocalSound('random.levelup')
+				if data.kind == 'broadcast' then
+					local isSelf = data.id == (lplr.Character and lplr.Character:GetAttribute('CombatantId') or -math.huge)
 
-					tlayer:send('title', {
-						action = 2,
-						text = '',
-						fadeIn = 3,
-						stay = 50,
-						fadeOut = 7
-					})
+					if data.event == 'runWon' then
+						if isSelf then
+							self:playLocalSound('random.levelup')
 
-					tlayer:send('title', {
-						action = 0,
-						text = '<font color="#FFAA00">RUN COMPLETE!</font>',
-						fadeIn = 0,
-						stay = 0,
-						fadeOut = 0
+							tlayer:send('title', {
+								action = 2,
+								text = '',
+								fadeIn = 3,
+								stay = 50,
+								fadeOut = 7
+							})
+
+							tlayer:send('title', {
+								action = 0,
+								text = '<font color="#FFAA00">RUN COMPLETE!</font>',
+								fadeIn = 0,
+								stay = 0,
+								fadeOut = 0
+							})
+						end
+					end
+				end
+
+				if type(data.text) == 'string' then
+					tlayer:send('chat', {
+						message = '<font color="#'..(data.text == 'PvP enabled!' and 'FF5555' or 'FFAA00')..'">'..data.text..'</font>'
 					})
 				end
 			end)
@@ -73,7 +84,7 @@ function handler:start()
 
 			local msg = data.killMessage and data.killMessage ~= '' and data.killMessage or 'killed'
 			tlayer:send('chat', {
-				message = `<font color="#ff5555">{data.killer} {msg} {data.victim}.</font>`
+				message = data.killer and `<font color="#ff5555">{data.killer} {msg} {data.victim}.</font>` or `<font color="#ff5555">{data.victim} died.</font>`
 			})
 		end)
 	}
@@ -81,8 +92,14 @@ function handler:start()
 	self.oldchat = getcallbackvalue(textChatService, 'OnIncomingMessage')
 	textChatService.OnIncomingMessage = function(message)
 		if message.Status == Enum.TextChatMessageStatus.Success then
+			local prefix = message.PrefixText
+			local plr = message.TextSource and playersService:GetPlayerByUserId(message.TextSource.UserId)
+			if plr then
+				prefix = '<font color="#AAAAAA">[</font><font color="#'..calculateLevelColor(plr:GetAttribute('AccountLevel') or 0):ToHex()..'">'..(plr:GetAttribute('AccountLevel') or 0)..'</font><font color="#AAAAAA">] </font><font color="#'..(plr:GetAttribute('NameColor') and plr:GetAttribute('NameColor'):ToHex() or 'AAAAAA')..'">'..(plr.DisplayName or plr.Name)..'</font>:'
+			end
+
 			tlayer:send('chat', {
-				message = message.PrefixText..' '..message.Text
+				message = prefix..' '..message.Text
 			})
 		end
 	end

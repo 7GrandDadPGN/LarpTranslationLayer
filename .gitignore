@@ -7,5 +7,7 @@
 /bun.lock
 # xylex doesn't want ts so ig
 /.editorconfig
+/.vscode/launch.json
+/.vscode/tasks.json
 package-lock.json
 /hash.txt

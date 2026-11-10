@@ -409,6 +409,18 @@ function handler:addEntity(char, plr)
 				amount = char:GetAttribute('Absorption') or 0
 			})
 
+			tlayer:send('entity_state', {
+				id = entity.Id,
+				flag = 0,
+				state = char:GetAttribute('Burning') or false
+			})
+
+			tlayer:send('entity_state', {
+				id = entity.Id,
+				flag = 4,
+				state = char:GetAttribute('Using') and char:GetAttribute('Using') ~= '' or false
+			})
+
 			table.insert(entity.Connections, char:GetAttributeChangedSignal('Health'):Connect(function()
 				tlayer:send('entity_health', {
 					id = entity.Id,
@@ -428,6 +440,14 @@ function handler:addEntity(char, plr)
 					id = entity.Id,
 					flag = 0,
 					state = char:GetAttribute('Burning') or false
+				})
+			end))
+
+			table.insert(entity.Connections, char:GetAttributeChangedSignal('Using'):Connect(function()
+				tlayer:send('entity_state', {
+					id = entity.Id,
+					flag = 4,
+					state = char:GetAttribute('Using') and char:GetAttribute('Using') ~= '' or false
 				})
 			end))
 

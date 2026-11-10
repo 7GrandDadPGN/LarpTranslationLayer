@@ -539,6 +539,8 @@ const self = class EntityHandler extends Handler {
 					gamemode: 2,
 					levelType: 'FLAT'
 				});
+
+				MCHandler.local.dataWatcher.updateObject(6, 20);
 			}
 		});
 

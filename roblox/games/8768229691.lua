@@ -300,7 +300,7 @@ handlers.entity = (function()
 		self.olddamage = skywars.HealthController.animateDamage
 	
 		skywars.HealthController.animateDamage = function(...)
-			local self, target = ...
+			local boop, target = ...
 			local plr = playersService:GetPlayerFromCharacter(target)
 			if plr then
 				tlayer:send('entity_status', {
@@ -373,6 +373,10 @@ handlers.entity = (function()
 				tlayer:send('chat', {
 					message = '/c/c'..victim.Name..' was killed by '..killer.Name
 				})
+	
+				if killer == lplr then
+					handlers.misc:playLocalSound('random.orb')
+				end
 			else
 				tlayer:send('chat', {
 					message = '/c/c'..victim.Name..' died.'
@@ -778,9 +782,31 @@ handlers.misc = (function()
 					self.tpflag = true
 					tlayer:send('reconnect')
 				end
+			end),
+			skywars.GameController.GameEnded:bind(function(data)
+				if table.find(data.GameResult.winners, lplr) then
+					self:playLocalSound('random.levelup')
+	
+					tlayer:send('title', {
+						action = 2,
+						text = '',
+						fadeIn = 3,
+						stay = 50,
+						fadeOut = 7
+					})
+	
+					tlayer:send('title', {
+						action = 0,
+						text = '<font color="#FFAA00">VICTORY!</font>',
+						fadeIn = 0,
+						stay = 0,
+						fadeOut = 0
+					})
+				end
 			end)
 		}
 	
+		setthreadidentity(8)
 		self.oldchat = getcallbackvalue(textChatService, 'OnIncomingMessage')
 		textChatService.OnIncomingMessage = function(message)
 			if message.Status == Enum.TextChatMessageStatus.Success then
@@ -838,7 +864,6 @@ handlers.misc = (function()
 		table.insert(lines, ' ')
 		table.insert(lines, 'Map: <font color="#55FF55">'..(map and map:GetAttribute('MapName') or 'None')..'</font>')
 		table.insert(lines, 'Mode: <font color="#FF5555">Insane</font>')
-	
 	
 		tlayer:send('scoreboard', {
 			title = '\255e\255lSKYWARS',
@@ -1042,6 +1067,13 @@ handlers.world = (function()
 						local prediction = skywars.InventoryController:registerItemPrediction(equipData.Name, -1)
 						if prediction then
 							skywars.Remotes[remotes.placeBlock]:fire(placePos, 0, prediction)
+							setthreadidentity(8)
+							tlayer:send('play_sound', {
+								sound = 'step.stone',
+								pos = data.pos,
+								volume = 1,
+								pitch = 1
+							})
 						else
 							self:write(0, placePos // BLOCK_SIZE, nil, mapLoaded)
 						end

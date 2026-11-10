@@ -3,6 +3,7 @@ const packets = require('../../packets/init.js');
 const EntityPlayerMP = require('../../../../base/translation/classes/entities/player/entityplayermp.js');
 const EntityPlayer = require('../../../../base/translation/classes/entities/player/entityplayer.js');
 const EntityLivingBase = require('../../../../base/translation/classes/entities/entitylivingbase.js');
+const { BLOCKSOUNDS } = require('../../types/blocksounds.js');
 let client, tablist, world, cSocket, MCHandler;
 
 const self = class EntityHandler extends Handler {
@@ -12,9 +13,6 @@ const self = class EntityHandler extends Handler {
 		// UNIVERSAL
 		socket.on('entity_spawn', (packet) => {
 			if (packet.isLocal) {
-				MCHandler.local.pos = { x: packet.pos.x, y: packet.pos.y, z: packet.pos.z };
-				MCHandler.local.index = packet.id;
-				MCHandler.local.spawn();
 				if (this.spawned) {
 					client.write('respawn', {
 						dimension: 0,
@@ -22,9 +20,16 @@ const self = class EntityHandler extends Handler {
 						gamemode: 2,
 						levelType: 'FLAT'
 					});
+
+					MCHandler.local.dataWatcher.updateObject(6, 20, true);
 				}
 
+				MCHandler.local.pos = { x: packet.pos.x, y: packet.pos.y, z: packet.pos.z };
+				MCHandler.local.index = packet.id;
+				MCHandler.local.spawn();
+
 				this.spawned = true;
+				this.spawnPosition = { x: packet.pos.x, y: packet.pos.y, z: packet.pos.z };
 				client.write('position', {
 					x: packet.pos.x,
 					y: packet.pos.y,
@@ -61,6 +66,9 @@ const self = class EntityHandler extends Handler {
 		socket.on('entity_move', (packet) => {
 			const entity = MCHandler.world.getEntity(packet.id);
 			if (!entity) return;
+			const dX = packet.pos.x - entity.pos.x;
+			const dY = packet.pos.y - entity.pos.y;
+			const dZ = packet.pos.z - entity.pos.z;
 
 			entity.moveEntity(
 				{
@@ -74,6 +82,32 @@ const self = class EntityHandler extends Handler {
 				},
 				packet.onGround ?? false
 			);
+
+			if (!(packet.onGround && (entity.dataWatcher.getObject(0) & (1 << 1)) != 0)) {
+				entity.stepDistance = (entity.stepDistance ?? 0) + Math.sqrt(dX * dX + dY * dY + dZ * dZ) * 0.6;
+
+				if (entity.stepDistance > 1 && entity.isLoaded) {
+					const stepBlock = MCHandler.world.getBlock({
+						x: Math.floor(packet.pos.x),
+						y: Math.floor(packet.pos.y - 0.2),
+						z: Math.floor(packet.pos.z)
+					});
+
+					if (stepBlock != 0) {
+						const blockSound = BLOCKSOUNDS[stepBlock] ?? ['step.stone'];
+						entity.stepDistance = 0;
+
+						client.write('named_sound_effect', {
+							soundName: blockSound[0],
+							x: packet.pos.x * 8,
+							y: packet.pos.y * 8,
+							z: packet.pos.z * 8,
+							volume: 0.15,
+							pitch: Math.floor(63 * (blockSound[1] ?? 1))
+						});
+					}
+				}
+			}
 		});
 
 		socket.on('entity_health', (packet) => {
@@ -87,6 +121,10 @@ const self = class EntityHandler extends Handler {
 						food: 19,
 						foodSaturation: 0
 					});
+
+					if (packet.health <= 0) {
+						this.spawnPosition = {};
+					}
 				}
 			}
 		});
@@ -152,7 +190,7 @@ const self = class EntityHandler extends Handler {
 
 		client.on('flying', ({ onGround } = {}) => {
 			if (MCHandler.world == undefined) return;
-			if (!this.spawned) return;
+			if (this.spawnPosition != undefined) return;
 			MCHandler.local.onGround = onGround;
 
 			cSocket.send(
@@ -167,7 +205,7 @@ const self = class EntityHandler extends Handler {
 
 		client.on('position', ({ x, y, z, onGround } = {}) => {
 			if (MCHandler.world == undefined) return;
-			if (!this.spawned) return;
+			if (this.spawnPosition != undefined) return;
 			MCHandler.local.pos = { x: x, y: y, z: z };
 			MCHandler.local.onGround = onGround;
 			MCHandler.world.update(MCHandler.local.pos);
@@ -184,7 +222,7 @@ const self = class EntityHandler extends Handler {
 
 		client.on('look', ({ yaw, pitch, onGround } = {}) => {
 			if (MCHandler.world == undefined) return;
-			if (!this.spawned) return;
+			if (this.spawnPosition != undefined) return;
 			MCHandler.local.yaw = yaw;
 			MCHandler.local.pitch = pitch;
 			MCHandler.local.onGround = onGround;
@@ -201,7 +239,14 @@ const self = class EntityHandler extends Handler {
 
 		client.on('position_look', ({ x, y, z, onGround, yaw, pitch } = {}) => {
 			if (MCHandler.world == undefined) return;
-			if (!this.spawned) return;
+			if (this.spawnPosition != undefined) {
+				if (this.spawnPosition.x == x && this.spawnPosition.y == y && this.spawnPosition.z == z) {
+					this.spawnPosition = undefined;
+				} else {
+					return;
+				}
+			}
+
 			MCHandler.local.yaw = yaw;
 			MCHandler.local.pitch = pitch;
 			MCHandler.local.pos = { x: x, y: y, z: z };
@@ -248,6 +293,7 @@ const self = class EntityHandler extends Handler {
 	}
 	cleanup(requeue) {
 		client = requeue ? client : undefined;
+		this.spawnPosition = {};
 		this.spawned = false;
 	}
 	obtainHandlers(handlers, mchandler) {

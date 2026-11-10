@@ -7,10 +7,11 @@ module.exports = class EntityMovePacket extends Packet {
 			id: data.readDoubleLE(1),
 			yaw: data.readFloatLE(9),
 			pitch: data.readFloatLE(13),
+			onGround: data.readUInt8(17) > 0,
 			pos: {
-				x: data.readDoubleLE(17),
-				y: data.readDoubleLE(25),
-				z: data.readDoubleLE(33)
+				x: data.readDoubleLE(18),
+				y: data.readDoubleLE(26),
+				z: data.readDoubleLE(34)
 			}
 		};
 	}

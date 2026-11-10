@@ -10,9 +10,31 @@ function handler:start()
 				self.tpflag = true
 				tlayer:send('reconnect')
 			end
+		end),
+		skywars.GameController.GameEnded:bind(function(data)
+			if table.find(data.GameResult.winners, lplr) then
+				self:playLocalSound('random.levelup')
+
+				tlayer:send('title', {
+					action = 2,
+					text = '',
+					fadeIn = 3,
+					stay = 50,
+					fadeOut = 7
+				})
+
+				tlayer:send('title', {
+					action = 0,
+					text = '<font color="#FFAA00">VICTORY!</font>',
+					fadeIn = 0,
+					stay = 0,
+					fadeOut = 0
+				})
+			end
 		end)
 	}
 
+	setthreadidentity(8)
 	self.oldchat = getcallbackvalue(textChatService, 'OnIncomingMessage')
 	textChatService.OnIncomingMessage = function(message)
 		if message.Status == Enum.TextChatMessageStatus.Success then
@@ -70,7 +92,6 @@ function handler:sendScoreboard()
 	table.insert(lines, ' ')
 	table.insert(lines, 'Map: <font color="#55FF55">'..(map and map:GetAttribute('MapName') or 'None')..'</font>')
 	table.insert(lines, 'Mode: <font color="#FF5555">Insane</font>')
-
 
 	tlayer:send('scoreboard', {
 		title = '\255e\255lSKYWARS',

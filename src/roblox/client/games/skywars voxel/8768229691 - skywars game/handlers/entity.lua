@@ -15,7 +15,7 @@ function handler:start()
 	self.olddamage = skywars.HealthController.animateDamage
 
 	skywars.HealthController.animateDamage = function(...)
-		local self, target = ...
+		local boop, target = ...
 		local plr = playersService:GetPlayerFromCharacter(target)
 		if plr then
 			tlayer:send('entity_status', {
@@ -88,6 +88,10 @@ function handler:start()
 			tlayer:send('chat', {
 				message = '/c/c'..victim.Name..' was killed by '..killer.Name
 			})
+
+			if killer == lplr then
+				handlers.misc:playLocalSound('random.orb')
+			end
 		else
 			tlayer:send('chat', {
 				message = '/c/c'..victim.Name..' died.'
