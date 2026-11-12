@@ -16,19 +16,19 @@ local types = {}
 
 (function()
 	slop = {
-		ChatController = require(replicatedStorage.Client.Controller_1.ChatController),
-		CombatController = require(replicatedStorage.Client.Controller_1.CombatController_1),
-		CameraController = require(replicatedStorage.Client.Controller_1.CameraController),
-		CharacterAnimator = require(replicatedStorage.Client.Controller_1.CharacterAnimator),
-		CharacterController = require(replicatedStorage.Client.Controller_1.CharacterController),
-		InventoryController = require(replicatedStorage.Client.Controller_1.InventoryController),
-		InputHistoryController = require(replicatedStorage.Client.Controller_1.InputHistoryController_1),
+		ChatController = require(replicatedStorage.Client.Controller_2.ChatController),
+		CombatController = require(replicatedStorage.Client.Controller_2.CombatController_2),
+		CameraController = require(replicatedStorage.Client.Controller_2.CameraController),
+		CharacterAnimator = require(replicatedStorage.Client.Controller_2.CharacterAnimator),
+		CharacterController = require(replicatedStorage.Client.Controller_2.CharacterController),
+		InventoryController = require(replicatedStorage.Client.Controller_2.InventoryController),
+		InputHistoryController = require(replicatedStorage.Client.Controller_2.InputHistoryController_2),
 		ItemLookup = require(replicatedStorage.Shared.ItemLookup),
-		ItemUseController = require(replicatedStorage.Client.Controller_1.ItemUseController),
-		EntityRenderer = require(replicatedStorage.Client.Controller_1.EntityRenderer),
-		EntitySoundRenderer = require(replicatedStorage.Client.Controller_1.EntitySoundRenderer),
-		MovementController = require(replicatedStorage.Client.Controller_1.MovementController_1),
-		ViewmodelController = require(replicatedStorage.Client.Controller_1.ViewmodelController),
+		ItemUseController = require(replicatedStorage.Client.Controller_2.ItemUseController),
+		EntityRenderer = require(replicatedStorage.Client.Controller_2.EntityRenderer),
+		EntitySoundRenderer = require(replicatedStorage.Client.Controller_2.EntitySoundRenderer),
+		MovementController = require(replicatedStorage.Client.Controller_2.MovementController_2),
+		ViewmodelController = require(replicatedStorage.Client.Controller_2.ViewmodelController),
 	}
 end)()
 
@@ -279,16 +279,16 @@ handlers.entity = (function()
 	
 	function handler:start()
 		local tickFunc = debug.getupvalue(debug.getupvalue(slop.MovementController.start, 14), 5)
-		local entities = debug.getupvalue(debug.getupvalue(slop.EntityRenderer.start, 2), 10)
-		local localState = debug.getupvalue(tickFunc, 7)
-		local attack = debug.getupvalue(debug.getupvalue(slop.CombatController.attackAtScreenPoint_1, 2), 9)
-		local clickFunc = debug.getupvalue(slop.InputHistoryController.init, 2)
+		local entities = debug.getupvalue(debug.getupvalue(slop.EntityRenderer.start, 2), 14)
+		local localState = debug.getupvalue(tickFunc, 6)
+		local attack = debug.getupvalue(debug.getupvalue(slop.CombatController.attackAtScreenPoint_2, 2), 9)
+		local clickFunc = debug.getupvalue(debug.getupvalue(slop.InputHistoryController.init, 2), 2)
 	
 		self.oldtick = tickFunc
-		self.old = debug.getupvalue(tickFunc, 28)
+		self.old = debug.getupvalue(tickFunc, 14)
 	
 		debug.setupvalue(debug.getupvalue(slop.MovementController.start, 14), 5, function() end)
-		debug.setupvalue(tickFunc, 28, {
+		debug.setupvalue(tickFunc, 14, setmetatable({
 			simulateTick = function(state)
 				local entity = handler.character
 	
@@ -301,7 +301,9 @@ handlers.entity = (function()
 					state.isSneakHeld = handler.sneaking or false
 				end
 			end
-		})
+		}, {
+			__index = self.old
+		}))
 	
 		local correct
 		correct = customHook(debug.getupvalue(slop.MovementController.start, 8), function(...)
@@ -317,7 +319,7 @@ handlers.entity = (function()
 		end)
 	
 		local move
-		move = customHook(debug.getupvalue(debug.getupvalue(slop.EntityRenderer.start, 2), 11), function(...)
+		move = customHook(debug.getupvalue(debug.getupvalue(slop.EntityRenderer.start, 2), 15), function(...)
 			local res = table.pack(move(...))
 			local arg = ...
 			task.spawn(function()
@@ -346,7 +348,7 @@ handlers.entity = (function()
 		end)
 	
 		local add
-		add = customHook(debug.getupvalue(debug.getupvalue(slop.EntityRenderer.start, 2), 12), function(...)
+		add = customHook(debug.getupvalue(debug.getupvalue(slop.EntityRenderer.start, 2), 16), function(...)
 			local res = table.pack(add(...))
 			local arg = ...
 			task.spawn(function()
@@ -359,7 +361,7 @@ handlers.entity = (function()
 		end)
 	
 		local remove
-		remove = customHook(debug.getupvalue(debug.getupvalue(slop.EntityRenderer.start, 2), 15), function(...)
+		remove = customHook(debug.getupvalue(debug.getupvalue(slop.EntityRenderer.start, 2), 19), function(...)
 			local res = table.pack(remove(...))
 			local arg = ...
 			task.spawn(function()
@@ -559,6 +561,7 @@ handlers.entity = (function()
 		end
 	
 		tlayer.listeners.switch_slot = function(data)
+			debug.setupvalue(slop.InventoryController.selectSlot, 7, 0)
 			slop.InventoryController.selectSlot(data.slot + 1)
 			handlers.world.olduse()
 			setthreadidentity(8)
@@ -573,8 +576,8 @@ handlers.entity = (function()
 		end
 	
 		tlayer.listeners.arm_animation = function()
-			local clickQueue = debug.getupvalue(clickFunc, 4)
-			local wakeQueue = debug.getupvalue(clickFunc, 5)
+			local clickQueue = debug.getupvalue(clickFunc, 3)
+			local wakeQueue = debug.getupvalue(clickFunc, 4)
 			if #clickQueue >= 80 then
 				table.remove(clickQueue, 1)
 			end
@@ -587,7 +590,7 @@ handlers.entity = (function()
 			})
 	
 			wakeQueue.wake()
-			slop.ViewmodelController.swing_1()
+			slop.ViewmodelController.swing_2()
 			setthreadidentity(8)
 		end
 	
@@ -640,7 +643,7 @@ handlers.entity = (function()
 		end
 	
 		if self.old then
-			debug.setupvalue(self.oldtick, 28, self.old)
+			debug.setupvalue(self.oldtick, 14, self.old)
 			self.old = nil
 		end
 	
@@ -789,7 +792,7 @@ handlers.gui = (function()
 	}
 	
 	function handler:start()
-		self.old = debug.getupvalue(slop.InventoryController.start, 17)
+		self.old = debug.getupvalue(slop.InventoryController.start, 26)
 	
 		local hook
 		hook = hookfunction(self.old, function(...)
@@ -817,7 +820,7 @@ handlers.gui = (function()
 	function handler:updateInv()
 		local slots = table.create(45, {id = 0, count = 0})
 	
-		for slot, item in debug.getupvalue(debug.getupvalue(slop.InventoryController.start, 5), 2) do
+		for slot, item in debug.getupvalue(debug.getupvalue(slop.InventoryController.start, 6), 2) do
 			if slot > 0 and slot < 10 then
 				slots[slot + 35] = {id = self:convertItem(item), count = item.count or 1}
 			end

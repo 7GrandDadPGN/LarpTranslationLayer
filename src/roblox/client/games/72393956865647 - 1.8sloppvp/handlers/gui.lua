@@ -6,7 +6,7 @@ local handler = {
 }
 
 function handler:start()
-	self.old = debug.getupvalue(slop.InventoryController.start, 17)
+	self.old = debug.getupvalue(slop.InventoryController.start, 26)
 
 	local hook
 	hook = hookfunction(self.old, function(...)
@@ -34,7 +34,7 @@ end
 function handler:updateInv()
 	local slots = table.create(45, {id = 0, count = 0})
 
-	for slot, item in debug.getupvalue(debug.getupvalue(slop.InventoryController.start, 5), 2) do
+	for slot, item in debug.getupvalue(debug.getupvalue(slop.InventoryController.start, 6), 2) do
 		if slot > 0 and slot < 10 then
 			slots[slot + 35] = {id = self:convertItem(item), count = item.count or 1}
 		end
