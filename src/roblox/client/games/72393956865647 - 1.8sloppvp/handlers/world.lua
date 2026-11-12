@@ -81,8 +81,9 @@ end
 
 function handler:start()
 	local mapLoaded = false
-	local updateUsing = debug.getupvalue(debug.getupvalue(slop.ItemUseController.start, 5), 10)
-	local startUsing = debug.getupvalue(debug.getupvalue(slop.ItemUseController.start, 5), 18)
+	local renderStep = searchFor(slop.ItemUseController.start, 'onRenderStep')
+	local updateUsing = searchFor(renderStep, 'updateUsing')
+	local startUsing = searchFor(renderStep, 'startUsing')
 
 	self.connections = {
 		workspace.Maps.DescendantAdded:Connect(function(v)
@@ -110,7 +111,8 @@ function handler:start()
 
 	mapLoaded = true
 
-	self.olduse = hookfunction(debug.getupvalue(slop.ItemUseController.start, 5), function() end)
+	self.olduse = renderStep
+	self.oldusecall = hookfunction(renderStep, function() end)
 
 	tlayer.listeners.chunk = function(data)
 		if mapLoaded then
@@ -136,7 +138,7 @@ function handler:start()
 
 	tlayer.listeners.dig = function(data)
 		if data.status == 5 then
-			handler.olduse()
+			handler.oldusecall()
 			setthreadidentity(8)
 		end
 	end
@@ -148,8 +150,9 @@ function handler:clean()
 	end
 
 	if self.olduse then
-		restorefunction(debug.getupvalue(slop.ItemUseController.start, 5))
+		restorefunction(self.olduse)
 		self.olduse = nil
+		self.oldusecall = nil
 	end
 
 	self.useData = nil

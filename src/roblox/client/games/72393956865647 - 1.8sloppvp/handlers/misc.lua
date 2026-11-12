@@ -8,9 +8,13 @@ local function calculateLevelColor(level)
 	return COLORS[(math.floor((math.max(1, level) - 1) / 10) % #COLORS) + 1]
 end
 
-local function xpForLevel(xp)
-	local multi = math.max(1, math.floor(xp))
-	return ((100 / 2) * multi) * (multi - 1)
+local function getLevelXp(level)
+	level = math.max(level, 1)
+	if level >= 1000 then
+		return 0
+	end
+
+	return math.floor(((((level - 1) ^ 2) * 0.045276) + 32.4) + 0.5)
 end
 
 function handler:start()
@@ -21,9 +25,15 @@ function handler:start()
 				tlayer:send('reconnect')
 			end
 		end),
+		lplr:GetAttributeChangedSignal('level'):Connect(function()
+			self:replicateXP()
+		end),
+		lplr:GetAttributeChangedSignal('xp'):Connect(function()
+			self:replicateXP()
+		end)
 	}
 
-	self.oldchat = debug.getupvalue(debug.getupvalue(slop.ChatController.start, 21), 20)
+	self.oldchat = searchFor(searchFor(slop.ChatController.start, 'initChat'), 'addMessage')
 	self.oldkill = debug.getupvalue(slop.EntitySoundRenderer.start, 2)
 
 	local hook
@@ -62,12 +72,6 @@ function handler:start()
 		end
 	end]]
 
-	--[[tlayer:send('experience', {
-		experienceBar = lplr:GetAttribute('XPProgress') or 0,
-		level = lplr:GetAttribute('XPLevel') or 1,
-		totalExperience = lplr:GetAttribute('TotalXP') or 0
-	})]]
-
 	self.scoreboardthread = task.spawn(function()
 		repeat
 			self:sendScoreboard()
@@ -84,6 +88,14 @@ function handler:start()
 		setthreadidentity(8)
 		--textChatService.ChatInputBarConfiguration.TargetTextChannel:SendAsync(data.text)
 	end
+end
+
+function handler:replicateXP()
+	tlayer:send('experience', {
+		experienceBar = math.clamp((lplr:GetAttribute('xp') or 1) / getLevelXp(lplr:GetAttribute('level') or 1), 0, 1),
+		level = lplr:GetAttribute('level') or 1,
+		totalExperience = lplr:GetAttribute('xp') or 1
+	})
 end
 
 function handler:sendScoreboard()

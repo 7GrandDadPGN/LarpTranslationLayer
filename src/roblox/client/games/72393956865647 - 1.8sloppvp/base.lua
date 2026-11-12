@@ -14,6 +14,14 @@ local tlayer = ...
 local handlers = {}
 local types = {}
 
+local function searchFor(func, name)
+	for i, v in debug.getupvalues(func) do
+		if type(v) == 'function' and debug.info(v, 'n') == name then
+			return v, i
+		end
+	end
+end
+
 (function()
 	slop = {
 		ChatController = require(replicatedStorage.Client.Controller_2.ChatController),

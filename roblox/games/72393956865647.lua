@@ -14,6 +14,14 @@ local tlayer = ...
 local handlers = {}
 local types = {}
 
+local function searchFor(func, name)
+	for i, v in debug.getupvalues(func) do
+		if type(v) == 'function' and debug.info(v, 'n') == name then
+			return v, i
+		end
+	end
+end
+
 (function()
 	slop = {
 		ChatController = require(replicatedStorage.Client.Controller_2.ChatController),
@@ -211,6 +219,7 @@ handlers.entity = (function()
 		threads = {},
 		threads2 = {},
 		hooks = {},
+		upvals = {},
 		connections = {},
 		aimC0 = CFrame.new(),
 		botId = -1,
@@ -277,18 +286,26 @@ handlers.entity = (function()
 		return data
 	end
 	
+	local function modifyUpvalue(func, index, newval)
+		if not (handler.upvals[func] and handler.upvals[func][index]) then
+			handler.upvals[func] = handler.upvals[func] or {}
+			handler.upvals[func][index] = debug.getupvalue(func, index)
+			return debug.setupvalue(func, index, newval)
+		end
+	end
+	
 	function handler:start()
-		local tickFunc = debug.getupvalue(debug.getupvalue(slop.MovementController.start, 14), 5)
-		local entities = debug.getupvalue(debug.getupvalue(slop.EntityRenderer.start, 2), 14)
-		local localState = debug.getupvalue(tickFunc, 6)
-		local attack = debug.getupvalue(debug.getupvalue(slop.CombatController.attackAtScreenPoint_2, 2), 9)
+		local tickFunc, tickIndex = searchFor(searchFor(slop.MovementController.start, 'onRenderStep'), 'simulateTick')
+		local entities = debug.getupvalue(searchFor(slop.EntityRenderer.start, 'onEntityStates'), 14)
+		local attack = searchFor(searchFor(slop.CombatController.attackAtScreenPoint_2, 'attack'), 'hitEntity')
 		local clickFunc = debug.getupvalue(debug.getupvalue(slop.InputHistoryController.init, 2), 2)
+		local localState = debug.getupvalue(tickFunc, 6)
 	
 		self.oldtick = tickFunc
 		self.old = debug.getupvalue(tickFunc, 14)
 	
-		debug.setupvalue(debug.getupvalue(slop.MovementController.start, 14), 5, function() end)
-		debug.setupvalue(tickFunc, 14, setmetatable({
+		modifyUpvalue(searchFor(slop.MovementController.start, 'onRenderStep'), tickIndex, function() end)
+		modifyUpvalue(tickFunc, 14, setmetatable({
 			simulateTick = function(state)
 				local entity = handler.character
 	
@@ -306,7 +323,7 @@ handlers.entity = (function()
 		}))
 	
 		local correct
-		correct = customHook(debug.getupvalue(slop.MovementController.start, 8), function(...)
+		correct = customHook(searchFor(slop.MovementController.start, 'onMovementCorrection'), function(...)
 			local pos = select(2, ...)
 			task.spawn(function()
 				if typeof(pos) == 'Vector3' then
@@ -319,7 +336,7 @@ handlers.entity = (function()
 		end)
 	
 		local move
-		move = customHook(debug.getupvalue(debug.getupvalue(slop.EntityRenderer.start, 2), 15), function(...)
+		move = customHook(searchFor(searchFor(slop.EntityRenderer.start, 'onEntityStates'), 'updateEntityView'), function(...)
 			local res = table.pack(move(...))
 			local arg = ...
 			task.spawn(function()
@@ -348,7 +365,7 @@ handlers.entity = (function()
 		end)
 	
 		local add
-		add = customHook(debug.getupvalue(debug.getupvalue(slop.EntityRenderer.start, 2), 16), function(...)
+		add = customHook(searchFor(searchFor(slop.EntityRenderer.start, 'onEntityStates'), 'createEntityView'), function(...)
 			local res = table.pack(add(...))
 			local arg = ...
 			task.spawn(function()
@@ -361,7 +378,7 @@ handlers.entity = (function()
 		end)
 	
 		local remove
-		remove = customHook(debug.getupvalue(debug.getupvalue(slop.EntityRenderer.start, 2), 19), function(...)
+		remove = customHook(searchFor(searchFor(slop.EntityRenderer.start, 'onEntityStates'), 'destroyEntityView'), function(...)
 			local res = table.pack(remove(...))
 			local arg = ...
 			task.spawn(function()
@@ -372,7 +389,7 @@ handlers.entity = (function()
 		end)
 	
 		local states
-		states = customHook(debug.getupvalue(slop.EntityRenderer.start, 2), function(...)
+		states = customHook(searchFor(slop.EntityRenderer.start, 'onEntityStates'), function(...)
 			local res = table.pack(states(...))
 			local arg = ...
 			task.spawn(function()
@@ -389,7 +406,7 @@ handlers.entity = (function()
 		end)
 	
 		local states
-		states = customHook(debug.getupvalue(slop.EntityRenderer.start, 4), function(...)
+		states = customHook(searchFor(slop.EntityRenderer.start, 'onEntityStatus'), function(...)
 			local arg = ...
 			task.spawn(function()
 				for _, data in decodeStatusList(arg) do
@@ -419,7 +436,7 @@ handlers.entity = (function()
 		end)
 	
 		local hurt
-		hurt = customHook(debug.getupvalue(slop.EntityRenderer.start, 5), function(...)
+		hurt = customHook(searchFor(slop.EntityRenderer.start, 'onEntityHurt'), function(...)
 			local arg = ...
 			task.spawn(function()
 				local hurtList = decodeHurtList(arg)
@@ -445,7 +462,7 @@ handlers.entity = (function()
 		end)
 	
 		local criticalHook
-		criticalHook = customHook(debug.getupvalue(slop.EntityRenderer.start, 6), function(...)
+		criticalHook = customHook(searchFor(slop.EntityRenderer.start, 'onCriticalHit'), function(...)
 			local arg = ...
 			task.spawn(function()
 				local entity = handler:getEntity(arg)
@@ -461,7 +478,7 @@ handlers.entity = (function()
 		end)
 	
 		local swingHook
-		swingHook = customHook(debug.getupvalue(slop.CharacterAnimator.start, 2), function(...)
+		swingHook = customHook(searchFor(slop.CharacterAnimator.start, 'onEntitySwing'), function(...)
 			local arg = ...
 			task.spawn(function()
 				local entity = handler:getEntity(arg)
@@ -477,7 +494,7 @@ handlers.entity = (function()
 		end)
 	
 		local hurtHook
-		hurtHook = customHook(debug.getupvalue(slop.CharacterController.start, 9), function(...)
+		hurtHook = customHook(searchFor(slop.CharacterController.start, 'onHurt'), function(...)
 			task.spawn(function()
 				local entity = handler:getEntity(arg)
 				if self.character then
@@ -523,7 +540,7 @@ handlers.entity = (function()
 			return healthHook(...)
 		end
 	
-		healthHook = customHook(debug.getupvalue(slop.CharacterController.start, 10), function(...)
+		healthHook = customHook(searchFor(slop.CharacterController.start, 'onHealth'), function(...)
 			return updateHealth(...)
 		end)
 	
@@ -563,7 +580,7 @@ handlers.entity = (function()
 		tlayer.listeners.switch_slot = function(data)
 			debug.setupvalue(slop.InventoryController.selectSlot, 7, 0)
 			slop.InventoryController.selectSlot(data.slot + 1)
-			handlers.world.olduse()
+			handlers.world.oldusecall()
 			setthreadidentity(8)
 		end
 	
@@ -584,9 +601,8 @@ handlers.entity = (function()
 	
 			table.insert(clickQueue, {
 				pressTime = os.clock(),
-				holdDuration = math.random() * 0.09,
-				clickKind = 0,
-				heldKey = Enum.UserInputType.MouseButton1
+				holdDuration = 0,
+				clickKind = 0
 			})
 	
 			wakeQueue.wake()
@@ -624,6 +640,14 @@ handlers.entity = (function()
 			task.cancel(v)
 		end
 	
+		for func, hooks in self.upvals do
+			for index, orig in hooks do
+				debug.setupvalue(func, index, orig)
+			end
+	
+			table.clear(hooks)
+		end
+	
 		for _, func in self.hooks do
 			restorefunction(func)
 		end
@@ -642,16 +666,6 @@ handlers.entity = (function()
 			self.character = nil
 		end
 	
-		if self.old then
-			debug.setupvalue(self.oldtick, 14, self.old)
-			self.old = nil
-		end
-	
-		if self.oldtick then
-			debug.setupvalue(debug.getupvalue(slop.MovementController.start, 14), 5, self.oldtick)
-			self.oldtick = nil
-		end
-	
 		self.botId = -1
 		self.sneaking = false
 		self.sprinting = false
@@ -660,6 +674,7 @@ handlers.entity = (function()
 		table.clear(self.threads)
 		table.clear(self.threads2)
 		table.clear(self.hooks)
+		table.clear(self.upvals)
 	end
 	
 	function handler:tick()
@@ -731,6 +746,7 @@ handlers.entity = (function()
 			table.insert(self.entities, entity)
 		else
 			handlers.gui:updateInv()
+			handlers.misc:replicateXP()
 			self.character = entity
 		end
 	end
@@ -792,7 +808,7 @@ handlers.gui = (function()
 	}
 	
 	function handler:start()
-		self.old = debug.getupvalue(slop.InventoryController.start, 26)
+		self.old = searchFor(slop.InventoryController.start, 'onInventory')
 	
 		local hook
 		hook = hookfunction(self.old, function(...)
@@ -867,9 +883,13 @@ handlers.misc = (function()
 		return COLORS[(math.floor((math.max(1, level) - 1) / 10) % #COLORS) + 1]
 	end
 	
-	local function xpForLevel(xp)
-		local multi = math.max(1, math.floor(xp))
-		return ((100 / 2) * multi) * (multi - 1)
+	local function getLevelXp(level)
+		level = math.max(level, 1)
+		if level >= 1000 then
+			return 0
+		end
+	
+		return math.floor(((((level - 1) ^ 2) * 0.045276) + 32.4) + 0.5)
 	end
 	
 	function handler:start()
@@ -880,9 +900,15 @@ handlers.misc = (function()
 					tlayer:send('reconnect')
 				end
 			end),
+			lplr:GetAttributeChangedSignal('level'):Connect(function()
+				self:replicateXP()
+			end),
+			lplr:GetAttributeChangedSignal('xp'):Connect(function()
+				self:replicateXP()
+			end)
 		}
 	
-		self.oldchat = debug.getupvalue(debug.getupvalue(slop.ChatController.start, 21), 20)
+		self.oldchat = searchFor(searchFor(slop.ChatController.start, 'initChat'), 'addMessage')
 		self.oldkill = debug.getupvalue(slop.EntitySoundRenderer.start, 2)
 	
 		local hook
@@ -921,12 +947,6 @@ handlers.misc = (function()
 			end
 		end]]
 	
-		--[[tlayer:send('experience', {
-			experienceBar = lplr:GetAttribute('XPProgress') or 0,
-			level = lplr:GetAttribute('XPLevel') or 1,
-			totalExperience = lplr:GetAttribute('TotalXP') or 0
-		})]]
-	
 		self.scoreboardthread = task.spawn(function()
 			repeat
 				self:sendScoreboard()
@@ -943,6 +963,14 @@ handlers.misc = (function()
 			setthreadidentity(8)
 			--textChatService.ChatInputBarConfiguration.TargetTextChannel:SendAsync(data.text)
 		end
+	end
+	
+	function handler:replicateXP()
+		tlayer:send('experience', {
+			experienceBar = math.clamp((lplr:GetAttribute('xp') or 1) / getLevelXp(lplr:GetAttribute('level') or 1), 0, 1),
+			level = lplr:GetAttribute('level') or 1,
+			totalExperience = lplr:GetAttribute('xp') or 1
+		})
 	end
 	
 	function handler:sendScoreboard()
@@ -1169,8 +1197,9 @@ handlers.world = (function()
 	
 	function handler:start()
 		local mapLoaded = false
-		local updateUsing = debug.getupvalue(debug.getupvalue(slop.ItemUseController.start, 5), 10)
-		local startUsing = debug.getupvalue(debug.getupvalue(slop.ItemUseController.start, 5), 18)
+		local renderStep = searchFor(slop.ItemUseController.start, 'onRenderStep')
+		local updateUsing = searchFor(renderStep, 'updateUsing')
+		local startUsing = searchFor(renderStep, 'startUsing')
 	
 		self.connections = {
 			workspace.Maps.DescendantAdded:Connect(function(v)
@@ -1198,7 +1227,8 @@ handlers.world = (function()
 	
 		mapLoaded = true
 	
-		self.olduse = hookfunction(debug.getupvalue(slop.ItemUseController.start, 5), function() end)
+		self.olduse = renderStep
+		self.oldusecall = hookfunction(renderStep, function() end)
 	
 		tlayer.listeners.chunk = function(data)
 			if mapLoaded then
@@ -1224,7 +1254,7 @@ handlers.world = (function()
 	
 		tlayer.listeners.dig = function(data)
 			if data.status == 5 then
-				handler.olduse()
+				handler.oldusecall()
 				setthreadidentity(8)
 			end
 		end
@@ -1236,8 +1266,9 @@ handlers.world = (function()
 		end
 	
 		if self.olduse then
-			restorefunction(debug.getupvalue(slop.ItemUseController.start, 5))
+			restorefunction(self.olduse)
 			self.olduse = nil
+			self.oldusecall = nil
 		end
 	
 		self.useData = nil

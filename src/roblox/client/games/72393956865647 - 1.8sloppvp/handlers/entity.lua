@@ -6,6 +6,7 @@ local handler = {
 	threads = {},
 	threads2 = {},
 	hooks = {},
+	upvals = {},
 	connections = {},
 	aimC0 = CFrame.new(),
 	botId = -1,
@@ -72,18 +73,26 @@ local function decodeStatusList(arg)
 	return data
 end
 
+local function modifyUpvalue(func, index, newval)
+	if not (handler.upvals[func] and handler.upvals[func][index]) then
+		handler.upvals[func] = handler.upvals[func] or {}
+		handler.upvals[func][index] = debug.getupvalue(func, index)
+		return debug.setupvalue(func, index, newval)
+	end
+end
+
 function handler:start()
-	local tickFunc = debug.getupvalue(debug.getupvalue(slop.MovementController.start, 14), 5)
-	local entities = debug.getupvalue(debug.getupvalue(slop.EntityRenderer.start, 2), 14)
-	local localState = debug.getupvalue(tickFunc, 6)
-	local attack = debug.getupvalue(debug.getupvalue(slop.CombatController.attackAtScreenPoint_2, 2), 9)
+	local tickFunc, tickIndex = searchFor(searchFor(slop.MovementController.start, 'onRenderStep'), 'simulateTick')
+	local entities = debug.getupvalue(searchFor(slop.EntityRenderer.start, 'onEntityStates'), 14)
+	local attack = searchFor(searchFor(slop.CombatController.attackAtScreenPoint_2, 'attack'), 'hitEntity')
 	local clickFunc = debug.getupvalue(debug.getupvalue(slop.InputHistoryController.init, 2), 2)
+	local localState = debug.getupvalue(tickFunc, 6)
 
 	self.oldtick = tickFunc
 	self.old = debug.getupvalue(tickFunc, 14)
 
-	debug.setupvalue(debug.getupvalue(slop.MovementController.start, 14), 5, function() end)
-	debug.setupvalue(tickFunc, 14, setmetatable({
+	modifyUpvalue(searchFor(slop.MovementController.start, 'onRenderStep'), tickIndex, function() end)
+	modifyUpvalue(tickFunc, 14, setmetatable({
 		simulateTick = function(state)
 			local entity = handler.character
 
@@ -101,7 +110,7 @@ function handler:start()
 	}))
 
 	local correct
-	correct = customHook(debug.getupvalue(slop.MovementController.start, 8), function(...)
+	correct = customHook(searchFor(slop.MovementController.start, 'onMovementCorrection'), function(...)
 		local pos = select(2, ...)
 		task.spawn(function()
 			if typeof(pos) == 'Vector3' then
@@ -114,7 +123,7 @@ function handler:start()
 	end)
 
 	local move
-	move = customHook(debug.getupvalue(debug.getupvalue(slop.EntityRenderer.start, 2), 15), function(...)
+	move = customHook(searchFor(searchFor(slop.EntityRenderer.start, 'onEntityStates'), 'updateEntityView'), function(...)
 		local res = table.pack(move(...))
 		local arg = ...
 		task.spawn(function()
@@ -143,7 +152,7 @@ function handler:start()
 	end)
 
 	local add
-	add = customHook(debug.getupvalue(debug.getupvalue(slop.EntityRenderer.start, 2), 16), function(...)
+	add = customHook(searchFor(searchFor(slop.EntityRenderer.start, 'onEntityStates'), 'createEntityView'), function(...)
 		local res = table.pack(add(...))
 		local arg = ...
 		task.spawn(function()
@@ -156,7 +165,7 @@ function handler:start()
 	end)
 
 	local remove
-	remove = customHook(debug.getupvalue(debug.getupvalue(slop.EntityRenderer.start, 2), 19), function(...)
+	remove = customHook(searchFor(searchFor(slop.EntityRenderer.start, 'onEntityStates'), 'destroyEntityView'), function(...)
 		local res = table.pack(remove(...))
 		local arg = ...
 		task.spawn(function()
@@ -167,7 +176,7 @@ function handler:start()
 	end)
 
 	local states
-	states = customHook(debug.getupvalue(slop.EntityRenderer.start, 2), function(...)
+	states = customHook(searchFor(slop.EntityRenderer.start, 'onEntityStates'), function(...)
 		local res = table.pack(states(...))
 		local arg = ...
 		task.spawn(function()
@@ -184,7 +193,7 @@ function handler:start()
 	end)
 
 	local states
-	states = customHook(debug.getupvalue(slop.EntityRenderer.start, 4), function(...)
+	states = customHook(searchFor(slop.EntityRenderer.start, 'onEntityStatus'), function(...)
 		local arg = ...
 		task.spawn(function()
 			for _, data in decodeStatusList(arg) do
@@ -214,7 +223,7 @@ function handler:start()
 	end)
 
 	local hurt
-	hurt = customHook(debug.getupvalue(slop.EntityRenderer.start, 5), function(...)
+	hurt = customHook(searchFor(slop.EntityRenderer.start, 'onEntityHurt'), function(...)
 		local arg = ...
 		task.spawn(function()
 			local hurtList = decodeHurtList(arg)
@@ -240,7 +249,7 @@ function handler:start()
 	end)
 
 	local criticalHook
-	criticalHook = customHook(debug.getupvalue(slop.EntityRenderer.start, 6), function(...)
+	criticalHook = customHook(searchFor(slop.EntityRenderer.start, 'onCriticalHit'), function(...)
 		local arg = ...
 		task.spawn(function()
 			local entity = handler:getEntity(arg)
@@ -256,7 +265,7 @@ function handler:start()
 	end)
 
 	local swingHook
-	swingHook = customHook(debug.getupvalue(slop.CharacterAnimator.start, 2), function(...)
+	swingHook = customHook(searchFor(slop.CharacterAnimator.start, 'onEntitySwing'), function(...)
 		local arg = ...
 		task.spawn(function()
 			local entity = handler:getEntity(arg)
@@ -272,7 +281,7 @@ function handler:start()
 	end)
 
 	local hurtHook
-	hurtHook = customHook(debug.getupvalue(slop.CharacterController.start, 9), function(...)
+	hurtHook = customHook(searchFor(slop.CharacterController.start, 'onHurt'), function(...)
 		task.spawn(function()
 			local entity = handler:getEntity(arg)
 			if self.character then
@@ -318,7 +327,7 @@ function handler:start()
 		return healthHook(...)
 	end
 
-	healthHook = customHook(debug.getupvalue(slop.CharacterController.start, 10), function(...)
+	healthHook = customHook(searchFor(slop.CharacterController.start, 'onHealth'), function(...)
 		return updateHealth(...)
 	end)
 
@@ -358,7 +367,7 @@ function handler:start()
 	tlayer.listeners.switch_slot = function(data)
 		debug.setupvalue(slop.InventoryController.selectSlot, 7, 0)
 		slop.InventoryController.selectSlot(data.slot + 1)
-		handlers.world.olduse()
+		handlers.world.oldusecall()
 		setthreadidentity(8)
 	end
 
@@ -379,9 +388,8 @@ function handler:start()
 
 		table.insert(clickQueue, {
 			pressTime = os.clock(),
-			holdDuration = math.random() * 0.09,
-			clickKind = 0,
-			heldKey = Enum.UserInputType.MouseButton1
+			holdDuration = 0,
+			clickKind = 0
 		})
 
 		wakeQueue.wake()
@@ -419,6 +427,14 @@ function handler:clean()
 		task.cancel(v)
 	end
 
+	for func, hooks in self.upvals do
+		for index, orig in hooks do
+			debug.setupvalue(func, index, orig)
+		end
+
+		table.clear(hooks)
+	end
+
 	for _, func in self.hooks do
 		restorefunction(func)
 	end
@@ -437,16 +453,6 @@ function handler:clean()
 		self.character = nil
 	end
 
-	if self.old then
-		debug.setupvalue(self.oldtick, 14, self.old)
-		self.old = nil
-	end
-
-	if self.oldtick then
-		debug.setupvalue(debug.getupvalue(slop.MovementController.start, 14), 5, self.oldtick)
-		self.oldtick = nil
-	end
-
 	self.botId = -1
 	self.sneaking = false
 	self.sprinting = false
@@ -455,6 +461,7 @@ function handler:clean()
 	table.clear(self.threads)
 	table.clear(self.threads2)
 	table.clear(self.hooks)
+	table.clear(self.upvals)
 end
 
 function handler:tick()
@@ -526,6 +533,7 @@ function handler:addEntity(state)
 		table.insert(self.entities, entity)
 	else
 		handlers.gui:updateInv()
+		handlers.misc:replicateXP()
 		self.character = entity
 	end
 end

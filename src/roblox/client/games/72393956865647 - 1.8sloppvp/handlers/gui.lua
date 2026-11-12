@@ -6,7 +6,7 @@ local handler = {
 }
 
 function handler:start()
-	self.old = debug.getupvalue(slop.InventoryController.start, 26)
+	self.old = searchFor(slop.InventoryController.start, 'onInventory')
 
 	local hook
 	hook = hookfunction(self.old, function(...)
