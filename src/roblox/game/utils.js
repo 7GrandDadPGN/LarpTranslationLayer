@@ -55,10 +55,25 @@ function traverse(node, str, colorStore, parent) {
 
 			colorStore.color = true;
 		}
+	} else if (node.nodeType == 1 && node.rawTagName == 'b') {
+		colorStore.bold = true;
+		str += `\u00a7l`;
+	} else if (node.nodeType == 1 && node.rawTagName == 'i') {
+		colorStore.italic = true;
+		str += `\u00a7o`;
+	} else if (node.nodeType == 1 && node.rawTagName == 'u') {
+		colorStore.underline = true;
+		str += `\u00a7n`;
 	} else if (node.nodeType == '3') {
-		if (parent == undefined && colorStore.color) {
+		if (parent == undefined) {
+			if (colorStore.bold || colorStore.italic || colorStore.underline || colorStore.color) {
+				str += '\u00a7b';
+			}
+
+			delete colorStore.bold;
+			delete colorStore.italic;
+			delete colorStore.underline;
 			delete colorStore.color;
-			str += '\u00a7f';
 		}
 
 		str += node._rawText;
