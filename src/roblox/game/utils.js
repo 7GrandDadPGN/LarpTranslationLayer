@@ -1,5 +1,5 @@
 const { parse } = require('node-html-parser');
-const { COLOR_PALETTE, COLOR_REGEX } = require('./types/colors.js');
+const { COLOR_PALETTE, SPECIAL_CHARS, SPECIAL_REGEX } = require('./types/colors.js');
 
 function colorDistance(color1, color2, rgb) {
 	const rgb1 = rgb ? color1 : hexToRgb(color1);
@@ -31,19 +31,20 @@ function hexToRgb(hex) {
 	};
 }
 
-function traverse(node, str, colorStore, parent) {
+function traverse(node, str, store, used) {
+	const localStore = Object.assign({}, store);
 	if (node.nodeType == 1 && node.rawTagName == 'font') {
 		const color = node.getAttribute('color');
 		if (color != undefined) {
 			if (color.includes('#')) {
-				str += `\u00a7${findClosestColor(color)}`;
+				localStore.color = `\u00a7${findClosestColor(color)}`;
 			} else if (color.includes('rgb')) {
 				const split = color
 					.substring(4, color.length - 1)
 					.split(',')
 					.map((val) => parseFloat(val));
 
-				str += `\u00a7${findClosestColor(
+				localStore.color = `\u00a7${findClosestColor(
 					{
 						r: split[0],
 						g: split[1],
@@ -52,35 +53,37 @@ function traverse(node, str, colorStore, parent) {
 					true
 				)}`;
 			}
-
-			colorStore.color = true;
 		}
 	} else if (node.nodeType == 1 && node.rawTagName == 'b') {
-		colorStore.bold = true;
-		str += `\u00a7l`;
+		localStore.bold = true;
 	} else if (node.nodeType == 1 && node.rawTagName == 'i') {
-		colorStore.italic = true;
-		str += `\u00a7o`;
+		localStore.italic = true;
 	} else if (node.nodeType == 1 && node.rawTagName == 'u') {
-		colorStore.underline = true;
-		str += `\u00a7n`;
+		localStore.underline = true;
 	} else if (node.nodeType == '3') {
-		if (parent == undefined) {
-			if (colorStore.bold || colorStore.italic || colorStore.underline || colorStore.color) {
-				str += '\u00a7b';
+		if (store.color != used.color || store.bold != used.bold || store.italic != used.italic || store.underline != used.underline) {
+			let changed = false;
+			if (store.color != used.color || (store.bold != used.bold && used.bold) || (store.italic != used.italic && used.italic) || (store.underline != used.underline && used.underline)) {
+				str += store.color || '\u00a7b';
+				changed = true;
 			}
 
-			delete colorStore.bold;
-			delete colorStore.italic;
-			delete colorStore.underline;
-			delete colorStore.color;
+			if (store.bold && (store.bold != used.bold || changed)) str += '\u00a7l';
+			if (store.italic && (store.italic != used.italic || changed)) str += '\u00a7o';
+			if (store.underline && (store.underline != used.underline || changed)) str += '\u00a7n';
+
+			for (const key in used) {
+				delete used[key];
+			}
+
+			Object.assign(used, store);
 		}
 
 		str += node._rawText;
 	}
 
 	for (const subnode of node.childNodes) {
-		str = traverse(subnode, str, node);
+		str = traverse(subnode, str, localStore, used);
 	}
 
 	return str;
@@ -88,8 +91,12 @@ function traverse(node, str, colorStore, parent) {
 
 module.exports = {
 	translateText: function (str) {
-		let finalStr = traverse(parse(str), '', {});
+		let finalStr = traverse(parse(str), '', {}, {});
 		finalStr = finalStr.replaceAll('/c/', '\u00a7');
+		finalStr = finalStr.replaceAll(SPECIAL_REGEX, (char) => {
+			return SPECIAL_CHARS[char] || char;
+		});
+
 		return finalStr;
 	},
 	createItem: function (data, count) {

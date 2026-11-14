@@ -36,24 +36,25 @@ function handler:start()
 	self.oldchat = searchFor(searchFor(slop.ChatController.start, 'initChat'), 'addMessage')
 	self.oldkill = debug.getupvalue(slop.EntitySoundRenderer.start, 2)
 
-	local hook
-	hook = hookfunction(self.oldchat, function(...)
+	local chathook
+	chathook = hookfunction(self.oldchat, function(...)
 		local msg, color = ...
 		task.spawn(function()
 			if type(msg) == 'string' then
 				tlayer:send('chat', {
-					message = msg
+					message = '<font color="#'..(color or Color3.new(1, 1, 1)):ToHex()..'">'..msg..'</font>'
 				})
 			end
 		end)
-		return hook(...)
+
+		return chathook(...)
 	end)
 
-	local hook2
-	hook2 = hookfunction(self.oldkill, function()
+	local killhook
+	killhook = hookfunction(self.oldkill, function()
 		task.spawn(function()
 			handler:playLocalSound('random.orb')
-			hook2()
+			killhook()
 		end)
 	end)
 
@@ -65,13 +66,8 @@ function handler:start()
 	end)
 
 	tlayer.listeners.chat = function(data)
-		if data.text:lower():sub(1, 7) == '/reload' then
-			return
-		end
-
 		slop.ChatController.submitText(data.text)
 		setthreadidentity(8)
-		--textChatService.ChatInputBarConfiguration.TargetTextChannel:SendAsync(data.text)
 	end
 end
 

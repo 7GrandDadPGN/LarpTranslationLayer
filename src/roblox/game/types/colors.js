@@ -17,5 +17,14 @@ module.exports = {
 		'#AAAAAA': '7',
 		'#555555': '8',
 		'#000000': '0'
+	},
+	SPECIAL_REGEX: /&[\w#]+;/g,
+	SPECIAL_CHARS: {
+		'&amp;': '&',
+		'&lt;': '<',
+		'&gt;': '>',
+		'&quot;': '"',
+		'&apos;': "'",
+		'&ndash;': '-'
 	}
 };

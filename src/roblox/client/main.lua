@@ -106,10 +106,10 @@ function tlayer:login()
 	if self.game then
 		self.game:start()
 
-		kickConnection = game:GetService('GuiService').UiMessageChanged:Connect(function(msgType, newMessage)
+		kickConnection = game:GetService('GuiService').ErrorMessageChanged:Connect(function()
 			if game:GetService('GuiService'):GetErrorType().Name:find('Disconnect') then
 				self:send('kick', {
-					message = newMessage
+					message = game:GetService('GuiService'):GetErrorMessage()
 				})
 			end
 		end)

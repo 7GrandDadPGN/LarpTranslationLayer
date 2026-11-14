@@ -98,8 +98,8 @@ function handler:start()
 			local entity = handler.character
 
 			if entity and entity.pos then
-				state.position = entity.pos.Position / 3
 				state.previousPosition = state.position
+				state.position = entity.pos.Position / 3
 				state.velocity = entity.velocity / 3
 				state.isOnGround = entity.onGround
 				state.isSprinting = handler.sprinting or false
@@ -306,8 +306,8 @@ function handler:start()
 				elseif self.character.dead then
 					self:removeEntity(self.character.CId)
 					self:addEntity({
-						yaw = 0,
-						pitch = 0,
+						yaw = (math.deg(debug.getupvalue(slop.CameraController.getYaw, 1) * -1) - 180) % 360,
+						pitch = math.deg(debug.getupvalue(slop.CameraController.getPitch, 1) * -1) % 360,
 						health = hp,
 						id = debug.getupvalue(slop.EntityRenderer.getLocalEntityId, 1),
 						position = localState.position,
@@ -333,8 +333,8 @@ function handler:start()
 	end)
 
 	self:addEntity({
-		yaw = 0,
-		pitch = 0,
+		yaw = (math.deg(debug.getupvalue(slop.CameraController.getYaw, 1) * -1) - 180) % 360,
+		pitch = math.deg(debug.getupvalue(slop.CameraController.getPitch, 1) * -1) % 360,
 		health = debug.getupvalue(healthHook, 1),
 		id = debug.getupvalue(slop.EntityRenderer.getLocalEntityId, 1),
 		position = localState.position,
@@ -382,8 +382,17 @@ function handler:start()
 
 	tlayer.listeners.arm_animation = function()
 		local inputObj = {UserInputType = Enum.UserInputType.MouseButton1, KeyCode = Enum.KeyCode.Unknown}
+		if self.clickthread then
+			task.cancel(self.clickthread)
+			task.spawn(inputEndedFunc, inputObj, false)
+		end
+
 		task.spawn(inputBeganFunc, inputObj, false)
-		task.spawn(inputEndedFunc, inputObj, false)
+		self.clickthread = task.delay(0.02 + math.random() * 0.02, function()
+			task.spawn(inputEndedFunc, inputObj, false)
+			self.clickthread = nil
+		end)
+
 		slop.ViewmodelController.swing_2()
 		setthreadidentity(8)
 	end
@@ -399,9 +408,9 @@ end
 
 function handler:convertPosition(pos, entity, isMC)
 	if isMC then
-		return pos + Vector3.new(0.5, 127.66, 0.25)
+		return pos + Vector3.new(0.5, 128 - 0.336666, 0.25)
 	else
-		return ((pos - Vector3.new(0.5, 127.66, 0.25)) * BLOCK_SIZE)
+		return ((pos - Vector3.new(0.5, 128 - 0.336666, 0.25)) * BLOCK_SIZE)
 	end
 end
 
