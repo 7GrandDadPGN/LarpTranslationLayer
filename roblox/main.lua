@@ -36,8 +36,10 @@ local function downloadFile(path, func)
 end
 
 local tickloop
+local kickConnection
 local socket
 local packetQueue = {}
+local packetThread
 local tlayer = {
 	packets = {client = {}, server = {}},
 	listeners = {}
@@ -315,6 +317,14 @@ local SPackets = {
 			return buf
 		end
 	end)(),
+	kick = (function()
+		return function(data)
+			local buf = buffer.create(5 + #data.message)
+			buffer.writeu32(buf, 1, #data.message)
+			buffer.writestring(buf, 5, data.message)
+			return buf
+		end
+	end)(),
 	login = (function()
 		return function(data)
 			return buffer.create(1)
@@ -525,17 +535,17 @@ function tlayer:login()
 	if self.game then
 		self.game:start()
 
+		kickConnection = game:GetService('GuiService').UiMessageChanged:Connect(function(msgType, newMessage)
+			if game:GetService('GuiService'):GetErrorType().Name:find('Disconnect') then
+				self:send('kick', {
+					message = newMessage
+				})
+			end
+		end)
+
 		tickloop = task.spawn(function()
 			repeat
 				self.game:tick()
-
-				if #packetQueue > 1 then
-					socket:Send(buffer.tostring(self.packets.server.combined(packetQueue)), true)
-				elseif packetQueue[1] then
-					socket:Send(buffer.tostring(packetQueue[1]), true)
-				end
-
-				table.clear(packetQueue)
 				task.wait(0.016)
 			until false
 		end)
@@ -575,6 +585,16 @@ function tlayer:disconnect()
 	if tickloop then
 		task.cancel(tickloop)
 		tickloop = nil
+	end
+
+	if packetThread then
+		task.cancel(packetThread)
+		packetThread = nil
+	end
+
+	if kickConnection then
+		kickConnection:Disconnect()
+		kickConnection = nil
 	end
 
 	if self.game then
@@ -620,6 +640,19 @@ function tlayer:send(id, ...)
 	local packet = self.packets.server[id]
 	if packet and socket then
 		table.insert(packetQueue, packet(...))
+
+		if not packetThread then
+			packetThread = task.defer(function()
+				if #packetQueue > 1 then
+					socket:Send(buffer.tostring(self.packets.server.combined(packetQueue)), true)
+				elseif packetQueue[1] then
+					socket:Send(buffer.tostring(packetQueue[1]), true)
+				end
+
+				table.clear(packetQueue)
+				packetThread = nil
+			end)
+		end
 	end
 end
 

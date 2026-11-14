@@ -85,7 +85,8 @@ function handler:start()
 	local tickFunc, tickIndex = searchFor(searchFor(slop.MovementController.start, 'onRenderStep'), 'simulateTick')
 	local entities = debug.getupvalue(searchFor(slop.EntityRenderer.start, 'onEntityStates'), 14)
 	local attack = searchFor(searchFor(slop.CombatController.attackAtScreenPoint_2, 'attack'), 'hitEntity')
-	local clickFunc = debug.getupvalue(debug.getupvalue(slop.InputHistoryController.init, 2), 2)
+	local inputBeganFunc = searchFor(slop.InputHistoryController.init, 'onInputBegan')
+	local inputEndedFunc = searchFor(slop.InputHistoryController.init, 'onInputEnded')
 	local localState = debug.getupvalue(tickFunc, 6)
 
 	self.oldtick = tickFunc
@@ -380,19 +381,9 @@ function handler:start()
 	end
 
 	tlayer.listeners.arm_animation = function()
-		local clickQueue = debug.getupvalue(clickFunc, 3)
-		local wakeQueue = debug.getupvalue(clickFunc, 4)
-		if #clickQueue >= 80 then
-			table.remove(clickQueue, 1)
-		end
-
-		table.insert(clickQueue, {
-			pressTime = os.clock(),
-			holdDuration = 0,
-			clickKind = 0
-		})
-
-		wakeQueue.wake()
+		local inputObj = {UserInputType = Enum.UserInputType.MouseButton1, KeyCode = Enum.KeyCode.Unknown}
+		task.spawn(inputBeganFunc, inputObj, false)
+		task.spawn(inputEndedFunc, inputObj, false)
 		slop.ViewmodelController.swing_2()
 		setthreadidentity(8)
 	end
@@ -408,9 +399,9 @@ end
 
 function handler:convertPosition(pos, entity, isMC)
 	if isMC then
-		return pos + Vector3.new(0.5, 127.64, 0.25)
+		return pos + Vector3.new(0.5, 127.66, 0.25)
 	else
-		return ((pos - Vector3.new(0.5, 127.64, 0.25)) * BLOCK_SIZE)
+		return ((pos - Vector3.new(0.5, 127.66, 0.25)) * BLOCK_SIZE)
 	end
 end
 

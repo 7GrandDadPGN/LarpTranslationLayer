@@ -57,21 +57,6 @@ function handler:start()
 		end)
 	end)
 
-	--[[self.oldchat = getcallbackvalue(textChatService, 'OnIncomingMessage')
-	textChatService.OnIncomingMessage = function(message)
-		if message.Status == Enum.TextChatMessageStatus.Success then
-			local prefix = message.PrefixText
-			local plr = message.TextSource and playersService:GetPlayerByUserId(message.TextSource.UserId)
-			if plr then
-				prefix = '<font color="#AAAAAA">[</font><font color="#'..calculateLevelColor(plr:GetAttribute('AccountLevel') or 0):ToHex()..'">'..(plr:GetAttribute('AccountLevel') or 0)..'</font><font color="#AAAAAA">] </font><font color="#'..(plr:GetAttribute('NameColor') and plr:GetAttribute('NameColor'):ToHex() or 'AAAAAA')..'">'..(plr.DisplayName or plr.Name)..'</font>:'
-			end
-
-			tlayer:send('chat', {
-				message = prefix..' '..message.Text
-			})
-		end
-	end]]
-
 	self.scoreboardthread = task.spawn(function()
 		repeat
 			self:sendScoreboard()
@@ -91,9 +76,40 @@ function handler:start()
 end
 
 function handler:replicateXP()
+	local newLevel = lplr:GetAttribute('level') or 1
+	if self.level and self.level < newLevel then
+		local levelColor = calculateLevelColor(newLevel):ToHex()
+		self:playLocalSound('random.levelup')
+
+		tlayer:send('title', {
+			action = 2,
+			text = '',
+			fadeIn = 3,
+			stay = 50,
+			fadeOut = 7
+		})
+
+		tlayer:send('title', {
+			action = 0,
+			text = string.format('<font color="#%s">LEVEL UP!</font>', levelColor),
+			fadeIn = 0,
+			stay = 0,
+			fadeOut = 0
+		})
+
+		tlayer:send('title', {
+			action = 1,
+			text = string.format('<font color="#AAAAAA">[</font><font color="#%s">%d</font><font color="#AAAAAA">]  \226\134\146  [</font><font color="#%s">%d</font><font color="#AAAAAA">]</font>', calculateLevelColor(self.level):ToHex(), self.level, levelColor, newLevel),
+			fadeIn = 0,
+			stay = 0,
+			fadeOut = 0
+		})
+	end
+
+	self.level = newLevel
 	tlayer:send('experience', {
-		experienceBar = math.clamp((lplr:GetAttribute('xp') or 1) / getLevelXp(lplr:GetAttribute('level') or 1), 0, 1),
-		level = lplr:GetAttribute('level') or 1,
+		experienceBar = math.clamp((lplr:GetAttribute('xp') or 1) / getLevelXp(newLevel), 0, 1),
+		level = newLevel,
 		totalExperience = lplr:GetAttribute('xp') or 1
 	})
 end

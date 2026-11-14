@@ -26,6 +26,10 @@ const self = class ChatHandler extends Handler {
 				fadeOut: packet.fadeOut
 			});
 		});
+
+		socket.on('kick', (packet) => {
+			client.end(packet.message);
+		});
 	}
 	minecraft(mcClient) {
 		client = mcClient;

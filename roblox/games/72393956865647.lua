@@ -298,7 +298,8 @@ handlers.entity = (function()
 		local tickFunc, tickIndex = searchFor(searchFor(slop.MovementController.start, 'onRenderStep'), 'simulateTick')
 		local entities = debug.getupvalue(searchFor(slop.EntityRenderer.start, 'onEntityStates'), 14)
 		local attack = searchFor(searchFor(slop.CombatController.attackAtScreenPoint_2, 'attack'), 'hitEntity')
-		local clickFunc = debug.getupvalue(debug.getupvalue(slop.InputHistoryController.init, 2), 2)
+		local inputBeganFunc = searchFor(slop.InputHistoryController.init, 'onInputBegan')
+		local inputEndedFunc = searchFor(slop.InputHistoryController.init, 'onInputEnded')
 		local localState = debug.getupvalue(tickFunc, 6)
 	
 		self.oldtick = tickFunc
@@ -593,19 +594,9 @@ handlers.entity = (function()
 		end
 	
 		tlayer.listeners.arm_animation = function()
-			local clickQueue = debug.getupvalue(clickFunc, 3)
-			local wakeQueue = debug.getupvalue(clickFunc, 4)
-			if #clickQueue >= 80 then
-				table.remove(clickQueue, 1)
-			end
-	
-			table.insert(clickQueue, {
-				pressTime = os.clock(),
-				holdDuration = 0,
-				clickKind = 0
-			})
-	
-			wakeQueue.wake()
+			local inputObj = {UserInputType = Enum.UserInputType.MouseButton1, KeyCode = Enum.KeyCode.Unknown}
+			task.spawn(inputBeganFunc, inputObj, false)
+			task.spawn(inputEndedFunc, inputObj, false)
 			slop.ViewmodelController.swing_2()
 			setthreadidentity(8)
 		end
@@ -621,9 +612,9 @@ handlers.entity = (function()
 	
 	function handler:convertPosition(pos, entity, isMC)
 		if isMC then
-			return pos + Vector3.new(0.5, 127.64, 0.25)
+			return pos + Vector3.new(0.5, 127.66, 0.25)
 		else
-			return ((pos - Vector3.new(0.5, 127.64, 0.25)) * BLOCK_SIZE)
+			return ((pos - Vector3.new(0.5, 127.66, 0.25)) * BLOCK_SIZE)
 		end
 	end
 	
@@ -932,21 +923,6 @@ handlers.misc = (function()
 			end)
 		end)
 	
-		--[[self.oldchat = getcallbackvalue(textChatService, 'OnIncomingMessage')
-		textChatService.OnIncomingMessage = function(message)
-			if message.Status == Enum.TextChatMessageStatus.Success then
-				local prefix = message.PrefixText
-				local plr = message.TextSource and playersService:GetPlayerByUserId(message.TextSource.UserId)
-				if plr then
-					prefix = '<font color="#AAAAAA">[</font><font color="#'..calculateLevelColor(plr:GetAttribute('AccountLevel') or 0):ToHex()..'">'..(plr:GetAttribute('AccountLevel') or 0)..'</font><font color="#AAAAAA">] </font><font color="#'..(plr:GetAttribute('NameColor') and plr:GetAttribute('NameColor'):ToHex() or 'AAAAAA')..'">'..(plr.DisplayName or plr.Name)..'</font>:'
-				end
-	
-				tlayer:send('chat', {
-					message = prefix..' '..message.Text
-				})
-			end
-		end]]
-	
 		self.scoreboardthread = task.spawn(function()
 			repeat
 				self:sendScoreboard()
@@ -966,9 +942,40 @@ handlers.misc = (function()
 	end
 	
 	function handler:replicateXP()
+		local newLevel = lplr:GetAttribute('level') or 1
+		if self.level and self.level < newLevel then
+			local levelColor = calculateLevelColor(newLevel):ToHex()
+			self:playLocalSound('random.levelup')
+	
+			tlayer:send('title', {
+				action = 2,
+				text = '',
+				fadeIn = 3,
+				stay = 50,
+				fadeOut = 7
+			})
+	
+			tlayer:send('title', {
+				action = 0,
+				text = string.format('<font color="#%s">LEVEL UP!</font>', levelColor),
+				fadeIn = 0,
+				stay = 0,
+				fadeOut = 0
+			})
+	
+			tlayer:send('title', {
+				action = 1,
+				text = string.format('<font color="#AAAAAA">[</font><font color="#%s">%d</font><font color="#AAAAAA">]  \226\134\146  [</font><font color="#%s">%d</font><font color="#AAAAAA">]</font>', calculateLevelColor(self.level):ToHex(), self.level, levelColor, newLevel),
+				fadeIn = 0,
+				stay = 0,
+				fadeOut = 0
+			})
+		end
+	
+		self.level = newLevel
 		tlayer:send('experience', {
-			experienceBar = math.clamp((lplr:GetAttribute('xp') or 1) / getLevelXp(lplr:GetAttribute('level') or 1), 0, 1),
-			level = lplr:GetAttribute('level') or 1,
+			experienceBar = math.clamp((lplr:GetAttribute('xp') or 1) / getLevelXp(newLevel), 0, 1),
+			level = newLevel,
 			totalExperience = lplr:GetAttribute('xp') or 1
 		})
 	end
