@@ -67,6 +67,8 @@ function handler:start()
 						})
 					end
 				end
+			elseif event == 'rocket' then
+				self:addFirework(data.ticks)
 			elseif event == 'teleport' and data.pos then
 				tlayer:send('teleport', {
 					pos = data.pos + Vector3.new(0, 128, 0)
@@ -108,6 +110,13 @@ function handler:start()
 							pos = self:convertPosition(entity.RootPart.Position, entity, true),
 							volume = 0.5,
 							pitch = 0.4 / (math.random() * 0.4 + 0.8)
+						})
+					elseif data.kind == 'rocket' then
+						tlayer:send('play_sound', {
+							sound = 'entity.firework_rocket.launch',
+							pos = self:convertPosition(entity.RootPart.Position, entity, true),
+							volume = 1,
+							pitch = 1
 						})
 					end
 				end
@@ -266,7 +275,9 @@ function handler:start()
 	end
 
 	tlayer.listeners.use_item = function(data)
-		task.spawn(startUse)
+		if data.hand == 0 then
+			task.spawn(startUse)
+		end
 	end
 
 	tlayer.listeners.client_command = function(data)
@@ -280,6 +291,67 @@ function handler:start()
 			self.tickfunc()
 			handlers.gui:process()
 			setthreadidentity(8)
+		end
+
+		if self.character then
+			local equipped = unstable.Hands.inv.hotbar[unstable.Hands.inv.selected]
+			local newArmor = lplr:GetAttribute('ArmorPoints') or 0
+			local changes = {}
+
+			if equipped ~= self.lastEquipped then
+				local newDef = equipped and unstable.ItemTable[equipped.id] or {speed = 4}
+				local oldDef = self.lastEquipped and unstable.ItemTable[self.lastEquipped.id] or {speed = 4}
+
+				if newDef.speed ~= oldDef.speed then
+					table.insert(changes, {
+						key = 'generic.attack_speed',
+						value = 4,
+						modifiers = newDef.speed and newDef.speed ~= 4 and {
+							{
+								uuid = 'minecraft:base_attack_speed',
+								amount = newDef.speed - 4,
+								operation = 0
+							}
+						} or {}
+					})
+				end
+
+				self.lastEquipped = equipped
+			end
+
+			if newArmor ~= self.lastArmor then
+				table.insert(changes, {
+					key = 'generic.armor',
+					value = 0,
+					modifiers = newArmor > 0 and {
+						{
+							uuid = 'minecraft:armor.chestplate',
+							amount = newArmor,
+							operation = 0
+						}
+					} or {}
+				})
+
+				self.lastArmor = newArmor
+			end
+
+			if #changes > 0 then
+				tlayer:send('entity_attributes', {
+					id = self.character.Id,
+					attributes = httpService:JSONEncode(changes)
+				})
+			end
+		end
+
+		if self.firework then
+			self.firework.ticks -= 1
+			if self.firework.ticks <= 0 then
+				tlayer:send('entity_remove', {
+					id = self.firework.id
+				})
+
+				self.firework = nil
+			end
 		end
 
 		didMove = false
@@ -353,9 +425,12 @@ function handler:clean()
 	end
 
 	self.botId = -1
+	self.firework = nil
 	self.sneaking = false
 	self.sprinting = false
 	self.aimState = nil
+	self.lastEquipped = nil
+	self.lastArmor = nil
 	table.clear(self.connections)
 	table.clear(self.entities)
 	table.clear(self.threads)
@@ -364,13 +439,13 @@ end
 
 function handler:tick()
 	for _, entity in self.entities do
-		local y, x = entity.Head.CFrame:ToEulerAnglesYXZ()
+		local _, x = entity.RootPart.CFrame:ToEulerAnglesYXZ()
 		local pos = self:convertPosition(entity.RootPart.Position, entity, true)
 
 		tlayer:send('entity_move', {
 			id = entity.Id,
 			yaw = (math.deg(x * -1) - 180) % 360,
-			pitch = math.deg(y * -1),
+			pitch = math.deg((unstable.PitchTable[entity.PitchSlot] or 0) * -1),
 			pos = pos
 		})
 
@@ -410,6 +485,7 @@ function handler:addEntity(char, plr)
 				Connections = {},
 				Effects = {},
 				SoundTimer = 0,
+				PitchSlot = char:GetAttribute('LookSlot'),
 				Using = ''
 			}
 
@@ -461,6 +537,16 @@ function handler:addEntity(char, plr)
 				})
 			end))
 
+			table.insert(entity.Connections, char:GetAttributeChangedSignal('Gliding'):Connect(function()
+				entity.gliding = char:GetAttribute('Gliding') or false
+
+				tlayer:send('entity_state', {
+					id = entity.Id,
+					flag = 7,
+					state = char:GetAttribute('Gliding') or false
+				})
+			end))
+
 			if plr ~= lplr then
 				table.insert(entity.Connections, char:GetAttributeChangedSignal('Offhand'):Connect(function()
 					self:updateArmor(entity.Id, 5, char:GetAttribute('Offhand'))
@@ -479,14 +565,6 @@ function handler:addEntity(char, plr)
 						id = entity.Id,
 						flag = 1,
 						state = char:GetAttribute('Sneaking') or false
-					})
-				end))
-
-				table.insert(entity.Connections, char:GetAttributeChangedSignal('Gliding'):Connect(function()
-					tlayer:send('entity_state', {
-						id = entity.Id,
-						flag = 7,
-						state = char:GetAttribute('Gliding') or false
 					})
 				end))
 
@@ -544,6 +622,10 @@ function handler:addEntity(char, plr)
 					self:processEffects()
 				end))
 
+				tlayer:send('held_item_slot', {
+					slot = (unstable.Hands.inv and unstable.Hands.inv.selected or 1) - 1
+				})
+
 				handlers.misc:replicateXP()
 				entity.gliding = char:GetAttribute('Gliding') or false
 				self.character = entity
@@ -553,6 +635,38 @@ function handler:addEntity(char, plr)
 
 		self.threads[char] = nil
 	end)
+end
+
+function handler:addFirework(ticks)
+	if self.firework then
+		tlayer:send('entity_remove', {
+			id = self.firework.id
+		})
+	end
+
+	if self.character then
+		self.firework = {id = handler.botId, ticks = ticks or 20}
+		handler.botId -= 1
+
+		tlayer:send('entity_spawn', {
+			id = self.firework.id,
+			type = 2,
+			lplr = false,
+			yaw = 0,
+			pitch = 0,
+			pos = self.character.pos.Position
+		})
+
+		tlayer:send('entity_metadata', {
+			id = self.firework.id,
+			metadata = httpService:JSONEncode({
+				{
+					key = 9,
+					value = 2
+				}
+			})
+		})
+	end
 end
 
 function handler:removeEntity(char)
@@ -598,6 +712,10 @@ function handler:getEntity(char, isLocal)
 end
 
 function handler:decodeArmor(id, armor)
+	if not armor then
+		return
+	end
+
 	local decoded = httpService:JSONDecode(armor)
 	for i, v in {'head', 'chest', 'legs', 'feet'} do
 		self:updateArmor(id, i, decoded[v])

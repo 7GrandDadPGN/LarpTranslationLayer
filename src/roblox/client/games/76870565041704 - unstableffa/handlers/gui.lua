@@ -195,6 +195,13 @@ function handler:convertItem(item)
 		})
 	end
 
+	if item.dmg then
+		table.insert(nbt, {
+			type = 'damage',
+			data = item.dmg
+		})
+	end
+
 	local id = types.items[item.id] or 1
 	if type(id) == 'table' then
 		id = bit32.bor(bit32.lshift(id[1], 16), id[2])

@@ -8,19 +8,7 @@ function convertToByte(num) {
 
 module.exports = class LivingEntity extends Entity {
 	equipment = [];
-	attributeMap = [
-		{
-			key: 'generic.attack_speed',
-			value: 4,
-			modifiers: [
-				{
-					uuid: 'minecraft:base_attack_speed',
-					amount: -2.4000000953674316,
-					operation: 0
-				}
-			]
-		}
-	];
+	attributeMap = {};
 	activePotionsMap = {};
 	constructor(index) {
 		super(index);
@@ -50,12 +38,14 @@ module.exports = class LivingEntity extends Entity {
 		}
 	}
 	updateAttributes(attributes) {
-		this.attributeMap = attributes;
+		for (const obj of attributes) {
+			this.attributeMap[obj.key] = obj;
+		}
 
 		if (this.isLoaded) {
-			this.world.client.write('update_attributes', {
+			this.world.client.write('entity_update_attributes', {
 				entityId: this.minecraftId,
-				properties: this.attributeMap
+				properties: attributes
 			});
 		}
 	}

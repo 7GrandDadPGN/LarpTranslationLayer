@@ -105,7 +105,11 @@ function handler:start()
 	end
 
 	tlayer.listeners.dig = function(data)
-		if data.status == 5 then
+		if data.status == 0 then
+			firePacket({a = 'breakStart', cell = (data.pos - Vector3.new(0, 128, 0))})
+		elseif data.status == 2 then
+			firePacket({a = 'breakEnd', cell = (data.pos - Vector3.new(0, 128, 0))})
+		elseif data.status == 5 then
 			task.spawn(unstable.Hands.stopUsing, false)
 			setthreadidentity(8)
 		elseif data.status == 6 then
@@ -134,13 +138,6 @@ function handler:loadMap(didRemove)
 
 	if map then
 		self.loadconnection = map.AncestryChanged:Once(function(parent)
-			print('we did get destroyed')
-			for _, v in workspace.MCWorld.Solid:GetChildren() do
-				if (not (v.Name:find('Practice') or v.Name:find('Duel'))) and v.Name ~= 'Barrier' and v:IsA('Folder') then
-					print('newmap?', v)
-				end
-			end
-
 			self:loadMap(true)
 		end)
 

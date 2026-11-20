@@ -698,6 +698,15 @@ local SPackets = {
 				return buf
 			end
 		end)(),
+		entity_attributes = (function()
+			return function(data)
+				local buf = buffer.create(13 + #data.attributes)
+				buffer.writef64(buf, 1, data.id)
+				buffer.writeu32(buf, 9, #data.attributes)
+				buffer.writestring(buf, 13, data.attributes)
+				return buf
+			end
+		end)(),
 		entity_effect = (function()
 			return function(data)
 				local buf = buffer.create(14)
@@ -747,6 +756,15 @@ local SPackets = {
 				buffer.writef64(buf, 1, data.id)
 				buffer.writef32(buf, 9, data.yaw or 0)
 				buffer.writeu8(buf, 14, data.damageType or 0)
+				return buf
+			end
+		end)(),
+		entity_metadata = (function()
+			return function(data)
+				local buf = buffer.create(13 + #data.metadata)
+				buffer.writef64(buf, 1, data.id)
+				buffer.writeu32(buf, 9, #data.metadata)
+				buffer.writestring(buf, 13, data.metadata)
 				return buf
 			end
 		end)(),
@@ -811,6 +829,13 @@ local SPackets = {
 				buffer.writef32(buf, 1, data.experienceBar)
 				buffer.writef64(buf, 9, data.level)
 				buffer.writef64(buf, 17, data.totalExperience)
+				return buf
+			end
+		end)(),
+		held_item_slot = (function()
+			return function(data)
+				local buf = buffer.create(2)
+				buffer.writei8(buf, 1, data.slot)
 				return buf
 			end
 		end)(),

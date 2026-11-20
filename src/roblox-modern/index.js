@@ -47,16 +47,10 @@ function init() {
 
 server.on('postRegister', (client) => client.write('tags', tagdata));
 server.on('preRegister', async function (client, options) {
-	client.write('select_known_packs', {
-		packs: [{ namespace: 'minecraft', id: 'core', version: client.version }]
+	client.write('custom_payload', {
+		channel: 'minecraft:brand',
+		data: Buffer.from([0x10, 0x54, 0x72, 0x61, 0x6e, 0x73, 0x6c, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x4c, 0x61, 0x79, 0x65, 0x72])
 	});
-
-	for (const key in options.registryCodec) {
-		const entry = options.registryCodec[key];
-		for (const register of entry.entries) {
-			delete register.value;
-		}
-	}
 });
 
 server.on('playerJoin', async function (client) {

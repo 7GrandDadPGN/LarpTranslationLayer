@@ -1,6 +1,6 @@
 const Handler = require('../handler.js');
 const packets = require('../../packets/init.js');
-const Player = require('../../../../base-modern/translation/classes/entities/player/player.js');
+const { ENTITIES } = require('../../types/entities.js');
 let client, tablist, world, cSocket, MCHandler;
 
 function convertToByte(num) {
@@ -53,7 +53,7 @@ const self = class EntityHandler extends Handler {
 
 				MCHandler.world.update(MCHandler.local.pos);
 			} else {
-				const entity = MCHandler.world.addEntity(packet.id, new Player(packet.id));
+				const entity = MCHandler.world.addEntity(packet.id, new ENTITIES[packet.type](packet.id));
 				entity.bot = packet.isBot ? {} : undefined;
 
 				entity.moveEntity(
@@ -224,6 +224,27 @@ const self = class EntityHandler extends Handler {
 			}
 		});
 
+		socket.on('entity_attributes', (packet) => {
+			const entity = MCHandler.world.getEntity(packet.id, false, true);
+			if (entity) {
+				entity.updateAttributes(JSON.parse(packet.attributes));
+			}
+		});
+
+		socket.on('entity_metadata', (packet) => {
+			const entity = MCHandler.world.getEntity(packet.id, false, true);
+			if (entity) {
+				for (const obj of JSON.parse(packet.metadata)) {
+					console.log(obj.key, obj.value);
+					if (obj.item) {
+						entity.dataWatcher.updateObject(obj.key, obj.value.id != 0 ? createItem({ id: obj.value.id >> 16, damage: obj.value.id & 65535 }, obj.value.count, obj.value.nbt) : { itemCount: 0 });
+					} else {
+						entity.dataWatcher.updateObject(obj.key, obj.value);
+					}
+				}
+			}
+		});
+
 		socket.on('entity_equipment', (packet) => {
 			const entity = MCHandler.world.getEntity(packet.id);
 			if (entity) {
@@ -267,6 +288,10 @@ const self = class EntityHandler extends Handler {
 					pitch: true
 				}
 			});
+		});
+
+		socket.on('held_item_slot', (packet) => {
+			client.write('held_item_slot', packet);
 		});
 
 		socket.on('respawn', (packet) => {});

@@ -84,7 +84,7 @@ function handler:start()
 
 	tlayer.listeners.chat = function(data)
 		if data.text == 'reload' then
-			tlayer:send('reload_world')
+			handlers.entity:addFirework(40)
 			return
 		end
 

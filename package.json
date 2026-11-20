@@ -12,6 +12,7 @@
 		"url": "git+https://github.com/7GrandDadPGN/LarpTranslationLayer.git"
 	},
 	"scripts": {
+		"start": "node index.js",
 		"postinstall": "patch-package",
 		"format": "prettier --ignore-path ./.gitignore --write \"./**/*.js\""
 	},

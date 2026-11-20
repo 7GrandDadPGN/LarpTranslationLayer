@@ -8,7 +8,7 @@ function convertToByte(num) {
 
 module.exports = class EntityLivingBase extends Entity {
 	equipment = [];
-	attributeMap = [];
+	attributeMap = {};
 	activePotionsMap = {};
 	constructor(index) {
 		super(index);
@@ -47,12 +47,14 @@ module.exports = class EntityLivingBase extends Entity {
 		}
 	}
 	updateAttributes(attributes) {
-		this.attributeMap = attributes;
+		for (const obj of attributes) {
+			this.attributeMap[obj.key] = obj;
+		}
 
 		if (this.isLoaded) {
 			this.world.client.write('update_attributes', {
 				entityId: this.minecraftId,
-				properties: this.attributeMap
+				properties: attributes
 			});
 		}
 	}

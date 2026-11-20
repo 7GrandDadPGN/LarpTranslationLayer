@@ -5,7 +5,7 @@ module.exports = class FireworkRocketEntity extends Projectile {
 	constructor(index) {
 		super(index);
 		Object.assign(this.dataWatcher.data, {
-			8: { key: 8, value: { itemCount: 1, itemId: 1242, components: [], removedComponents: [] }, type: 'item_stack' },
+			8: { key: 8, value: { itemCount: 1, itemId: 1242, addedComponentCount: 0, removedComponentCount: 0, components: [], removeComponents: [] }, type: 'item_stack' },
 			9: { key: 9, value: undefined, type: 'optional_unsigned_int' },
 			10: { key: 10, value: false, type: 'boolean' }
 		});

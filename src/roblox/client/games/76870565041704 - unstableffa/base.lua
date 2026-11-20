@@ -36,6 +36,7 @@ end
 		World = require(lplr.PlayerScripts.MC.World)
 	}
 
+	unstable.ItemTable = debug.getupvalue(require(replicatedStorage.MC.Items).def, 2)
 	unstable.PitchTable = debug.getupvalue(unstable.World.pitchOf, 1)
 end)()
 

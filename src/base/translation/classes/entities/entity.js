@@ -52,7 +52,7 @@ module.exports = class Entity {
 		if (this.attributeMap != undefined) {
 			this.world.client.write('update_attributes', {
 				entityId: this.minecraftId,
-				properties: this.attributeMap
+				properties: Object.values(this.attributeMap)
 			});
 		}
 

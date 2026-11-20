@@ -10,12 +10,10 @@ let lightData = new Chunk();
 for (let x = 0; x < 16; x++) {
 	for (let z = 0; z < 16; z++) {
 		for (let skyY = -64; skyY < 320; skyY++) {
-			lightData.setBlockType(new Vec3(x, skyY, z), 0);
 			lightData.setSkyLight(new Vec3(x, skyY, z), 15);
 		}
 	}
 }
-const blankData = lightData.dump();
 lightData = lightData.dumpLight();
 
 function getBlockIndex(x, y, z) {
@@ -25,7 +23,6 @@ function getBlockIndex(x, y, z) {
 const self = class WorldHandler extends Handler {
 	createChunk(packet) {
 		const chunk = new Chunk();
-		chunk.load(blankData);
 		chunk.loadParsedLight(lightData.skyLight, [], lightData.skyLightMask, [], [], [[0, 1920]]);
 
 		if (packet.cells.length <= 0) {
