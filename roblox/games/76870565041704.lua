@@ -401,6 +401,13 @@ handlers.entity = (function()
 								id = entity.Id,
 								event = 9
 							})
+						elseif data.kind == 'throw' then
+							tlayer:send('play_sound', {
+								sound = 'entity.splash_potion.throw',
+								pos = self:convertPosition(entity.RootPart.Position, entity, true),
+								volume = 0.5,
+								pitch = 0.4 / (math.random() * 0.4 + 0.8)
+							})
 						elseif data.kind == 'windThrow' then
 							tlayer:send('play_sound', {
 								sound = 'entity.wind_charge.throw',
@@ -423,6 +430,7 @@ handlers.entity = (function()
 							if not ATTACK_SOUNDS[data.sound] then
 								print('missing', data.sound)
 							end
+	
 							tlayer:send('play_sound', {
 								sound = ATTACK_SOUNDS[data.sound] or 'entity.player.attack.nodamage',
 								pos = data.at + Vector3.new(0, 128, 0),
@@ -433,6 +441,13 @@ handlers.entity = (function()
 					elseif data.kind == 'wind' then
 						tlayer:send('play_sound', {
 							sound = 'entity.wind_charge.wind_burst',
+							pos = data.pos + Vector3.new(0, 128, 0),
+							volume = 1,
+							pitch = 1
+						})
+					elseif data.kind == 'splash' then
+						tlayer:send('play_sound', {
+							sound = 'entity.splash_potion.break',
 							pos = data.pos + Vector3.new(0, 128, 0),
 							volume = 1,
 							pitch = 1
@@ -1586,7 +1601,7 @@ handlers.world = (function()
 				if v:IsA('BasePart') then
 					parsePositions(v, function(pos)
 						self.blocks[pos // BLOCK_SIZE] = v
-						self:write(types.blocks[v.MaterialVariant] or (v.Name == 'Cobweb' and 129 or 1), pos // BLOCK_SIZE, v)
+						self:write(types.blocks[v.MaterialVariant] or (v.Name == 'Cobweb' and 129 or 1), pos // BLOCK_SIZE, v, mapLoaded)
 					end)
 				end
 			end))

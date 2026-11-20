@@ -76,7 +76,7 @@ function handler:start()
 			if v:IsA('BasePart') then
 				parsePositions(v, function(pos)
 					self.blocks[pos // BLOCK_SIZE] = v
-					self:write(types.blocks[v.MaterialVariant] or (v.Name == 'Cobweb' and 129 or 1), pos // BLOCK_SIZE, v)
+					self:write(types.blocks[v.MaterialVariant] or (v.Name == 'Cobweb' and 129 or 1), pos // BLOCK_SIZE, v, mapLoaded)
 				end)
 			end
 		end))
