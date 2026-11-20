@@ -16,6 +16,7 @@ local handlers = {}
 local types = {}
 
 (function()
+	tlayer:loadPackets(false)
 	local Flamework = require(replicatedStorage['rbxts_include']['node_modules']['@flamework'].core.out).Flamework
 	local ControllerTable = {}
 

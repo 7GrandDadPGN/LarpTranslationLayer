@@ -15,6 +15,7 @@ local handlers = {}
 local types = {}
 
 (function()
+	tlayer:loadPackets(false)
 	upg = {
 		ClientState = require(lplr.PlayerScripts.Client.Core.ClientState),
 		CombatController = require(lplr.PlayerScripts.Client.Controllers.CombatController),

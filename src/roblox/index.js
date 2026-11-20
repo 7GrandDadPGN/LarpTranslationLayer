@@ -59,6 +59,7 @@ server.on('playerJoin', async function (client) {
 
 	if (client.protocolVersion != 47) {
 		console.log(`\x1b[33m[*] Incorrect client version, Please use Minecraft 1.8.9!\x1b[0m`);
+		client.end('Incorrect client version');
 		return;
 	}
 

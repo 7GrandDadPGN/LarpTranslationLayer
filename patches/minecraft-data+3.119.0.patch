@@ -1,0 +1,646 @@
+diff --git a/node_modules/minecraft-data/minecraft-data/data/pc/1.8/proto.yml b/node_modules/minecraft-data/minecraft-data/data/pc/1.8/proto.yml
+index 24043ca..f5f09fe 100644
+--- a/node_modules/minecraft-data/minecraft-data/data/pc/1.8/proto.yml
++++ b/node_modules/minecraft-data/minecraft-data/data/pc/1.8/proto.yml
+@@ -18,7 +18,6 @@
+    option: native
+    entityMetadataLoop: native
+    bitfield: native
+-   bitflags: native
+    container: native
+    switch: native
+    void: native
+@@ -26,12 +25,12 @@
+    restBuffer: native
+    nbt: native
+    optionalNbt: native
+-   ByteArray: ["buffer", { "countType": "varint" }]
+-   string: ["pstring", { "countType": "varint" }]
+-   vec3i16:
+-      x: i16
+-      y: i16
+-      z: i16
++   string: [
++      "pstring",
++      {
++         "countType": "varint"
++      }
++   ]
+    slot:   
+       blockId: i16
+       _: blockId ?
+@@ -287,10 +286,17 @@
+       z: i32
+       pitch: i8
+       yaw: i8
+-      objectData: i32
+-      velocity: objectData ?
+-         if 0: void
+-         default: vec3i16
++      objectData:
++         intField: i32
++         velocityX: intField ?
++            if 0: void
++            default: i16
++         velocityY: intField ?
++            if 0: void
++            default: i16
++         velocityZ: intField ?
++            if 0: void
++            default: i16
+    packet_spawn_entity_living:   
+       entityId: varint
+       type: u8
+@@ -300,7 +306,9 @@
+       yaw: i8
+       pitch: i8
+       headPitch: i8
+-      velocity: vec3i16
++      velocityX: i16
++      velocityY: i16
++      velocityZ: i16
+       metadata: entityMetadata
+    packet_spawn_entity_painting:   
+       entityId: varint
+@@ -315,7 +323,9 @@
+       count: i16
+    packet_entity_velocity:   
+       entityId: varint
+-      velocity: vec3i16
++      velocityX: i16
++      velocityY: i16
++      velocityZ: i16
+    packet_entity_destroy:   
+       entityIds: varint[]varint
+    packet_entity:   
+@@ -460,18 +470,7 @@
+          if 38: varint[]$1
+          default: void
+    packet_game_state_change:   
+-      reason: u8 =>
+-         0: no_respawn_block_available
+-         1: start_raining
+-         2: stop_raining
+-         3: change_game_mode
+-         4: win_game
+-         5: demo_event
+-         6: play_arrow_hit_sound
+-         7: rain_level_change
+-         8: thunder_level_change
+-         # Event 9 is unused before the pufferfish mob was added in 1.13.
+-         10: guardian_elder_effect
++      reason: u8
+       gameMode: f32
+    packet_spawn_entity_weather:   
+       entityId: varint
+@@ -545,34 +544,37 @@
+       entries: []varint
+          name: string
+          value: varint
+-   # MC: ClientboundPlayerInfoPacket
+    packet_player_info:
+-      action: varint =>
+-         - add_player
+-         - update_game_mode
+-         - update_latency
+-         - update_display_name
+-         - remove_player
+-      ## https://github.com/extremeheat/extracted_minecraft_data/blob/client1.8.9/client/net/minecraft/network/play/server/S38PacketPlayerListItem.java#L113
++      action: varint
+       data: []varint
+-         uuid: UUID
+-         _: ../action ?
+-            if add_player:
++         UUID: UUID
++         name: ../action ?
++            if 0: string
++            default: void
++         properties: ../action ?
++            if 0: []varint
+                name: string
+-               properties: []varint
+-                  name: string
+-                  value: string
+-                  signature?: string
+-               gamemode: varint
+-               ping: varint
+-               displayName?: string
+-            if update_game_mode:
+-               gamemode: varint
+-            if update_latency:
+-               ping: varint
+-            if update_display_name:
+-               displayName?: string
+-            if remove_player: void
++               value: string
++               signature?: string
++            default: void
++         gamemode: ../action ?
++            if 0: varint
++            if 1: varint
++            default: void
++         ping: ../action ?
++            if 0: varint
++            if 2: varint
++            default: void
++         displayName: ../action ?
++            if 0: [
++               "option",
++               "string"
++            ]
++            if 3: [
++               "option",
++               "string"
++            ]
++            default: void
+    packet_abilities:   
+       flags: i8
+       flyingSpeed: f32
+@@ -638,11 +640,7 @@
+    packet_kick_disconnect:   
+       reason: string
+    packet_difficulty:   
+-      difficulty: u8 =>
+-         0: peaceful
+-         1: easy
+-         2: normal
+-         3: hard
++      difficulty: u8
+    packet_combat_event:   
+       event: varint
+       duration: event ?
+@@ -926,14 +924,7 @@
+       # Empty
+    packet_entity_action:   
+       entityId: varint
+-      actionId: varint =>
+-         0: start_sneaking
+-         1: stop_sneaking
+-         2: stop_sleeping
+-         3: start_sprinting
+-         4: stop_sprinting
+-         5: start_riding_jump
+-         6: open_inventory
++      actionId: varint
+       jumpBoost: varint
+    packet_steer_vehicle:   
+       sideways: f32
+@@ -978,10 +969,7 @@
+       chatColors: bool
+       skinParts: u8
+    packet_client_command:   
+-      payload: varint =>
+-         0: perform_respawn
+-         1: request_stats
+-         2: open_inventory_achievement
++      payload: varint
+    packet_custom_payload:   
+       channel: string
+       data: restBuffer
+diff --git a/node_modules/minecraft-data/minecraft-data/data/pc/1.8/protocol.json b/node_modules/minecraft-data/minecraft-data/data/pc/1.8/protocol.json
+index e3896a2..733701a 100644
+--- a/node_modules/minecraft-data/minecraft-data/data/pc/1.8/protocol.json
++++ b/node_modules/minecraft-data/minecraft-data/data/pc/1.8/protocol.json
+@@ -17,7 +17,6 @@
+     "option": "native",
+     "entityMetadataLoop": "native",
+     "bitfield": "native",
+-    "bitflags": "native",
+     "container": "native",
+     "switch": "native",
+     "void": "native",
+@@ -25,35 +24,12 @@
+     "restBuffer": "native",
+     "nbt": "native",
+     "optionalNbt": "native",
+-    "ByteArray": [
+-      "buffer",
+-      {
+-        "countType": "varint"
+-      }
+-    ],
+     "string": [
+       "pstring",
+       {
+         "countType": "varint"
+       }
+     ],
+-    "vec3i16": [
+-      "container",
+-      [
+-        {
+-          "name": "x",
+-          "type": "i16"
+-        },
+-        {
+-          "name": "y",
+-          "type": "i16"
+-        },
+-        {
+-          "name": "z",
+-          "type": "i16"
+-        }
+-      ]
+-    ],
+     "slot": [
+       "container",
+       [
+@@ -850,19 +826,53 @@
+             },
+             {
+               "name": "objectData",
+-              "type": "i32"
+-            },
+-            {
+-              "name": "velocity",
+               "type": [
+-                "switch",
+-                {
+-                  "compareTo": "objectData",
+-                  "fields": {
+-                    "0": "void"
++                "container",
++                [
++                  {
++                    "name": "intField",
++                    "type": "i32"
+                   },
+-                  "default": "vec3i16"
+-                }
++                  {
++                    "name": "velocityX",
++                    "type": [
++                      "switch",
++                      {
++                        "compareTo": "intField",
++                        "fields": {
++                          "0": "void"
++                        },
++                        "default": "i16"
++                      }
++                    ]
++                  },
++                  {
++                    "name": "velocityY",
++                    "type": [
++                      "switch",
++                      {
++                        "compareTo": "intField",
++                        "fields": {
++                          "0": "void"
++                        },
++                        "default": "i16"
++                      }
++                    ]
++                  },
++                  {
++                    "name": "velocityZ",
++                    "type": [
++                      "switch",
++                      {
++                        "compareTo": "intField",
++                        "fields": {
++                          "0": "void"
++                        },
++                        "default": "i16"
++                      }
++                    ]
++                  }
++                ]
+               ]
+             }
+           ]
+@@ -903,8 +913,16 @@
+               "type": "i8"
+             },
+             {
+-              "name": "velocity",
+-              "type": "vec3i16"
++              "name": "velocityX",
++              "type": "i16"
++            },
++            {
++              "name": "velocityY",
++              "type": "i16"
++            },
++            {
++              "name": "velocityZ",
++              "type": "i16"
+             },
+             {
+               "name": "metadata",
+@@ -966,8 +984,16 @@
+               "type": "varint"
+             },
+             {
+-              "name": "velocity",
+-              "type": "vec3i16"
++              "name": "velocityX",
++              "type": "i16"
++            },
++            {
++              "name": "velocityY",
++              "type": "i16"
++            },
++            {
++              "name": "velocityZ",
++              "type": "i16"
+             }
+           ]
+         ],
+@@ -1626,24 +1652,7 @@
+           [
+             {
+               "name": "reason",
+-              "type": [
+-                "mapper",
+-                {
+-                  "type": "u8",
+-                  "mappings": {
+-                    "0": "no_respawn_block_available",
+-                    "1": "start_raining",
+-                    "2": "stop_raining",
+-                    "3": "change_game_mode",
+-                    "4": "win_game",
+-                    "5": "demo_event",
+-                    "6": "play_arrow_hit_sound",
+-                    "7": "rain_level_change",
+-                    "8": "thunder_level_change",
+-                    "10": "guardian_elder_effect"
+-                  }
+-                }
+-              ]
++              "type": "u8"
+             },
+             {
+               "name": "gameMode",
+@@ -1972,19 +1981,7 @@
+           [
+             {
+               "name": "action",
+-              "type": [
+-                "mapper",
+-                {
+-                  "type": "varint",
+-                  "mappings": {
+-                    "0": "add_player",
+-                    "1": "update_game_mode",
+-                    "2": "update_latency",
+-                    "3": "update_display_name",
+-                    "4": "remove_player"
+-                  }
+-                }
+-              ]
++              "type": "varint"
+             },
+             {
+               "name": "data",
+@@ -1996,101 +1993,105 @@
+                     "container",
+                     [
+                       {
+-                        "name": "uuid",
++                        "name": "UUID",
+                         "type": "UUID"
+                       },
+                       {
+-                        "anon": true,
++                        "name": "name",
+                         "type": [
+                           "switch",
+                           {
+                             "compareTo": "../action",
+                             "fields": {
+-                              "add_player": [
+-                                "container",
+-                                [
+-                                  {
+-                                    "name": "name",
+-                                    "type": "string"
+-                                  },
+-                                  {
+-                                    "name": "properties",
+-                                    "type": [
+-                                      "array",
++                              "0": "string"
++                            },
++                            "default": "void"
++                          }
++                        ]
++                      },
++                      {
++                        "name": "properties",
++                        "type": [
++                          "switch",
++                          {
++                            "compareTo": "../action",
++                            "fields": {
++                              "0": [
++                                "array",
++                                {
++                                  "countType": "varint",
++                                  "type": [
++                                    "container",
++                                    [
++                                      {
++                                        "name": "name",
++                                        "type": "string"
++                                      },
++                                      {
++                                        "name": "value",
++                                        "type": "string"
++                                      },
+                                       {
+-                                        "countType": "varint",
++                                        "name": "signature",
+                                         "type": [
+-                                          "container",
+-                                          [
+-                                            {
+-                                              "name": "name",
+-                                              "type": "string"
+-                                            },
+-                                            {
+-                                              "name": "value",
+-                                              "type": "string"
+-                                            },
+-                                            {
+-                                              "name": "signature",
+-                                              "type": [
+-                                                "option",
+-                                                "string"
+-                                              ]
+-                                            }
+-                                          ]
++                                          "option",
++                                          "string"
+                                         ]
+                                       }
+                                     ]
+-                                  },
+-                                  {
+-                                    "name": "gamemode",
+-                                    "type": "varint"
+-                                  },
+-                                  {
+-                                    "name": "ping",
+-                                    "type": "varint"
+-                                  },
+-                                  {
+-                                    "name": "displayName",
+-                                    "type": [
+-                                      "option",
+-                                      "string"
+-                                    ]
+-                                  }
+-                                ]
+-                              ],
+-                              "update_game_mode": [
+-                                "container",
+-                                [
+-                                  {
+-                                    "name": "gamemode",
+-                                    "type": "varint"
+-                                  }
+-                                ]
+-                              ],
+-                              "update_latency": [
+-                                "container",
+-                                [
+-                                  {
+-                                    "name": "ping",
+-                                    "type": "varint"
+-                                  }
+-                                ]
+-                              ],
+-                              "update_display_name": [
+-                                "container",
+-                                [
+-                                  {
+-                                    "name": "displayName",
+-                                    "type": [
+-                                      "option",
+-                                      "string"
+-                                    ]
+-                                  }
+-                                ]
++                                  ]
++                                }
++                              ]
++                            },
++                            "default": "void"
++                          }
++                        ]
++                      },
++                      {
++                        "name": "gamemode",
++                        "type": [
++                          "switch",
++                          {
++                            "compareTo": "../action",
++                            "fields": {
++                              "0": "varint",
++                              "1": "varint"
++                            },
++                            "default": "void"
++                          }
++                        ]
++                      },
++                      {
++                        "name": "ping",
++                        "type": [
++                          "switch",
++                          {
++                            "compareTo": "../action",
++                            "fields": {
++                              "0": "varint",
++                              "2": "varint"
++                            },
++                            "default": "void"
++                          }
++                        ]
++                      },
++                      {
++                        "name": "displayName",
++                        "type": [
++                          "switch",
++                          {
++                            "compareTo": "../action",
++                            "fields": {
++                              "0": [
++                                "option",
++                                "string"
+                               ],
+-                              "remove_player": "void"
+-                            }
++                              "3": [
++                                "option",
++                                "string"
++                              ]
++                            },
++                            "default": "void"
+                           }
+                         ]
+                       }
+@@ -2374,18 +2375,7 @@
+           [
+             {
+               "name": "difficulty",
+-              "type": [
+-                "mapper",
+-                {
+-                  "type": "u8",
+-                  "mappings": {
+-                    "0": "peaceful",
+-                    "1": "easy",
+-                    "2": "normal",
+-                    "3": "hard"
+-                  }
+-                }
+-              ]
++              "type": "u8"
+             }
+           ]
+         ],
+@@ -3096,21 +3086,7 @@
+             },
+             {
+               "name": "actionId",
+-              "type": [
+-                "mapper",
+-                {
+-                  "type": "varint",
+-                  "mappings": {
+-                    "0": "start_sneaking",
+-                    "1": "stop_sneaking",
+-                    "2": "stop_sleeping",
+-                    "3": "start_sprinting",
+-                    "4": "stop_sprinting",
+-                    "5": "start_riding_jump",
+-                    "6": "open_inventory"
+-                  }
+-                }
+-              ]
++              "type": "varint"
+             },
+             {
+               "name": "jumpBoost",
+@@ -3304,17 +3280,7 @@
+           [
+             {
+               "name": "payload",
+-              "type": [
+-                "mapper",
+-                {
+-                  "type": "varint",
+-                  "mappings": {
+-                    "0": "perform_respawn",
+-                    "1": "request_stats",
+-                    "2": "open_inventory_achievement"
+-                  }
+-                }
+-              ]
++              "type": "varint"
+             }
+           ]
+         ],

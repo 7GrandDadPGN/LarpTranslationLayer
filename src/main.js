@@ -7,7 +7,7 @@ function selectGame(game) {
 }
 
 module.exports = async function (args) {
-	const games = fs.readdirSync('./src').filter((entry) => !(entry.includes('.') || entry == 'base'));
+	const games = fs.readdirSync('./src').filter((entry) => !(entry.includes('.') || entry == 'base' || entry == 'base-modern'));
 	if (args.game != undefined && games.includes(args.game)) {
 		selectGame(args.game);
 		return;

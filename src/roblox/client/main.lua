@@ -46,11 +46,21 @@ local tlayer = {
 }
 
 local CPackets = {
+	legacy = {
 --CPackets
+	},
+	modern = {
+--ModCPackets
+	}
 }
 
 local SPackets = {
+	legacy = {
 --SPackets
+	},
+	modern ={
+--ModSPackets
+	}
 }
 
 function tlayer:init()
@@ -64,9 +74,6 @@ function tlayer:init()
 			connection:Disable()
 		end
 	end)
-
-	self:map(CPackets, false)
-	self:map(SPackets, true)
 
 	if isfile('tlayer/games/'..game.PlaceId..'.lua') then
 		self.game = loadstring(readfile('tlayer/games/'..game.PlaceId..'.lua'), tostring(game.PlaceId))(self)
@@ -107,7 +114,7 @@ function tlayer:login()
 		self.game:start()
 
 		kickConnection = game:GetService('GuiService').ErrorMessageChanged:Connect(function()
-			if game:GetService('GuiService'):GetErrorType().Name:find('Disconnect') then
+			if game:GetService('GuiService'):GetErrorType().Name:find('Disconnect') and self.send then
 				self:send('kick', {
 					message = game:GetService('GuiService'):GetErrorMessage()
 				})
@@ -117,7 +124,7 @@ function tlayer:login()
 		tickloop = task.spawn(function()
 			repeat
 				self.game:tick()
-				task.wait(0.016)
+				task.wait(1 / 30)
 			until false
 		end)
 	end
@@ -205,6 +212,11 @@ function tlayer:map(packetList, isServer)
 	end
 
 	table.clear(packetList)
+end
+
+function tlayer:loadPackets(isModern)
+	self:map(CPackets[isModern and 'modern' or 'legacy'], false)
+	self:map(SPackets[isModern and 'modern' or 'legacy'], true)
 end
 
 function tlayer:send(id, ...)

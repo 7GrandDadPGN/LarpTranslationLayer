@@ -23,6 +23,7 @@ local function searchFor(func, name)
 end
 
 (function()
+	tlayer:loadPackets(false)
 	slop = {
 		ChatController = require(replicatedStorage.Client.Controller_2.ChatController),
 		CombatController = require(replicatedStorage.Client.Controller_2.CombatController_2),
