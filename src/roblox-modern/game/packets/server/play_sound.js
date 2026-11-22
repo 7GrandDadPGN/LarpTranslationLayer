@@ -10,7 +10,7 @@ module.exports = class PlaySoundPacket extends Packet {
 			sound: {
 				soundId: (mcData.soundsByName[data.toString('utf8', 2, strLength + 2)] || { id: 1 }).id - 1
 			},
-			soundCategory: 'master',
+			soundCategory: data.readUInt8(23 + strLength),
 			x: data.readInt32LE(3 + strLength),
 			y: data.readInt32LE(7 + strLength),
 			z: data.readInt32LE(11 + strLength),

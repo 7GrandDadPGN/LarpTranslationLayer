@@ -109,7 +109,7 @@ module.exports = class World {
 			return bDist - aDist;
 		});
 
-		for (; requests.length > 0 && this.chunkQueue.getSize() < 16;) {
+		for (; requests.length > 0 && this.chunkQueue.getSize() < 8;) {
 			const chunk = requests.pop();
 			this.chunkQueue.queue(chunk[0], chunk[1], this.expireTime);
 

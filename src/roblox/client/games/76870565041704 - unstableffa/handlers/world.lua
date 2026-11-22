@@ -63,7 +63,8 @@ function handler:start()
 					sound = 'block.stone.break',
 					pos = data.pos + Vector3.new(0, 128, 0),
 					volume = 1,
-					pitch = 1
+					pitch = 1,
+					source = 4
 				})
 			elseif event == 'teleport' then
 				tpCheck = false
@@ -114,6 +115,8 @@ function handler:start()
 			setthreadidentity(8)
 		elseif data.status == 6 then
 			handlers.gui:swap()
+		elseif data.status == 7 then
+			handlers.entity:jab()
 		end
 	end
 end

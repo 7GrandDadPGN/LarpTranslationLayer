@@ -25,19 +25,19 @@ end
 (function()
 	tlayer:loadPackets(false)
 	slop = {
-		ChatController = require(replicatedStorage.Client.Controller_2.ChatController),
-		CombatController = require(replicatedStorage.Client.Controller_2.CombatController_2),
-		CameraController = require(replicatedStorage.Client.Controller_2.CameraController),
-		CharacterAnimator = require(replicatedStorage.Client.Controller_2.CharacterAnimator),
-		CharacterController = require(replicatedStorage.Client.Controller_2.CharacterController),
-		InventoryController = require(replicatedStorage.Client.Controller_2.InventoryController),
-		InputHistoryController = require(replicatedStorage.Client.Controller_2.InputHistoryController_2),
+		ChatController = require(replicatedStorage.Client.Controller_5.ChatController),
+		CombatController = require(replicatedStorage.Client.Controller_5.CombatController_5),
+		CameraController = require(replicatedStorage.Client.Controller_5.CameraController),
+		CharacterAnimator = require(replicatedStorage.Client.Controller_5.CharacterAnimator),
+		CharacterController = require(replicatedStorage.Client.Controller_5.CharacterController),
+		InventoryController = require(replicatedStorage.Client.Controller_5.InventoryController),
+		InputHistoryController = require(replicatedStorage.Client.Controller_5.InputHistoryController_5),
 		ItemLookup = require(replicatedStorage.Shared.ItemLookup),
-		ItemUseController = require(replicatedStorage.Client.Controller_2.ItemUseController),
-		EntityRenderer = require(replicatedStorage.Client.Controller_2.EntityRenderer),
-		EntitySoundRenderer = require(replicatedStorage.Client.Controller_2.EntitySoundRenderer),
-		MovementController = require(replicatedStorage.Client.Controller_2.MovementController_2),
-		ViewmodelController = require(replicatedStorage.Client.Controller_2.ViewmodelController),
+		ItemUseController = require(replicatedStorage.Client.Controller_5.ItemUseController),
+		EntityRenderer = require(replicatedStorage.Client.Controller_5.EntityRenderer),
+		EntitySoundRenderer = require(replicatedStorage.Client.Controller_5.EntitySoundRenderer),
+		MovementController = require(replicatedStorage.Client.Controller_5.MovementController_5),
+		ViewmodelController = require(replicatedStorage.Client.Controller_5.ViewmodelController),
 	}
 end)()
 

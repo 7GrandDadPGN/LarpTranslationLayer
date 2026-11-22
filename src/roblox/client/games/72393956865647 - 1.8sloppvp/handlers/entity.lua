@@ -83,17 +83,17 @@ end
 
 function handler:start()
 	local tickFunc, tickIndex = searchFor(searchFor(slop.MovementController.start, 'onRenderStep'), 'simulateTick')
-	local entities = debug.getupvalue(searchFor(slop.EntityRenderer.start, 'onEntityStates'), 14)
-	local attack = searchFor(searchFor(slop.CombatController.attackAtScreenPoint_2, 'attack'), 'hitEntity')
+	local entities = debug.getupvalue(searchFor(slop.EntityRenderer.start, 'onEntityStates'), 16)
+	local attack = searchFor(searchFor(searchFor(slop.CombatController.init, 'attackPending'), 'attack'), 'hitEntity')
 	local inputBeganFunc = searchFor(slop.InputHistoryController.init, 'onInputBegan')
 	local inputEndedFunc = searchFor(slop.InputHistoryController.init, 'onInputEnded')
 	local localState = debug.getupvalue(tickFunc, 6)
 
 	self.oldtick = tickFunc
-	self.old = debug.getupvalue(tickFunc, 14)
+	self.old = debug.getupvalue(tickFunc, 15)
 
 	modifyUpvalue(searchFor(slop.MovementController.start, 'onRenderStep'), tickIndex, function() end)
-	modifyUpvalue(tickFunc, 14, setmetatable({
+	modifyUpvalue(tickFunc, 15, setmetatable({
 		simulateTick = function(state)
 			local entity = handler.character
 
@@ -393,7 +393,7 @@ function handler:start()
 			self.clickthread = nil
 		end)
 
-		slop.ViewmodelController.swing_2()
+		slop.ViewmodelController.swing_5()
 		setthreadidentity(8)
 	end
 

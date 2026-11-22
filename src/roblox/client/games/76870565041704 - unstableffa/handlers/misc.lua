@@ -146,14 +146,15 @@ function handler:clean()
 	table.clear(self.connections)
 end
 
-function handler:playLocalSound(sound, pitch)
+function handler:playLocalSound(sound, volume, pitch)
 	local char = handlers.entity.character
 	if char and char.pos then
 		tlayer:send('play_sound', {
 			sound = sound,
 			pos = char.pos.Position + Vector3.new(0, 128, 0),
-			volume = 2,
-			pitch = pitch or 1
+			volume = volume or 1,
+			pitch = pitch or 1,
+			source = 5
 		})
 	end
 end

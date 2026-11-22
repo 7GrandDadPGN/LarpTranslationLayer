@@ -7,6 +7,7 @@ local ATTACK_SOUNDS = {
 	sweep = 'entity.player.attack.sweep',
 	weak = 'entity.player.attack.weak',
 	lunge = 'item.spear.lunge_1',
+	jab = 'item.spear.hit',
 	jabMiss = 'item.spear.use',
 	smash = 'item.mace.smash_ground',
 	smashHeavy = 'item.mace.smash_ground_heavy',
@@ -14,6 +15,7 @@ local ATTACK_SOUNDS = {
 	spearCharge = "item.spear.attack"
 }
 
+local snapshot
 local handler = {
 	Name = 'entity',
 	connections = {},
@@ -43,7 +45,8 @@ function handler:start()
 							sound = data.type == 'fire' and 'entity.player.hurt_on_fire' or 'entity.generic.hurt',
 							pos = self:convertPosition(entity.RootPart.Position, entity, true),
 							volume = 1,
-							pitch = (math.random() - math.random()) * 0.2 + 1
+							pitch = (math.random() - math.random()) * 0.2 + 1,
+							source = 7
 						})
 					end
 				end
@@ -109,21 +112,24 @@ function handler:start()
 							sound = 'entity.splash_potion.throw',
 							pos = self:convertPosition(entity.RootPart.Position, entity, true),
 							volume = 0.5,
-							pitch = 0.4 / (math.random() * 0.4 + 0.8)
+							pitch = 0.4 / (math.random() * 0.4 + 0.8),
+							source = 7
 						})
 					elseif data.kind == 'windThrow' then
 						tlayer:send('play_sound', {
 							sound = 'entity.wind_charge.throw',
 							pos = self:convertPosition(entity.RootPart.Position, entity, true),
 							volume = 0.5,
-							pitch = 0.4 / (math.random() * 0.4 + 0.8)
+							pitch = 0.4 / (math.random() * 0.4 + 0.8),
+							source = 7
 						})
 					elseif data.kind == 'rocket' then
 						tlayer:send('play_sound', {
 							sound = 'entity.firework_rocket.launch',
 							pos = self:convertPosition(entity.RootPart.Position, entity, true),
 							volume = 1,
-							pitch = 1
+							pitch = 1,
+							source = 7
 						})
 					end
 				end
@@ -138,31 +144,33 @@ function handler:start()
 							sound = ATTACK_SOUNDS[data.sound] or 'entity.player.attack.nodamage',
 							pos = data.at + Vector3.new(0, 128, 0),
 							volume = 1,
-							pitch = 1
+							pitch = 1,
+							source = 7
 						})
 					end
 				elseif data.kind == 'wind' then
 					tlayer:send('play_sound', {
 						sound = 'entity.wind_charge.wind_burst',
 						pos = data.pos + Vector3.new(0, 128, 0),
-						volume = 1,
-						pitch = 1
+						volume = 0.5,
+						pitch = 0.36,
+						source = 6
 					})
 				elseif data.kind == 'splash' then
 					tlayer:send('play_sound', {
 						sound = 'entity.splash_potion.break',
 						pos = data.pos + Vector3.new(0, 128, 0),
 						volume = 1,
-						pitch = 1
+						pitch = 1,
+						source = 7
 					})
 				elseif data.kind == 'killSound' and lplr.Character and data.killer == lplr.Character:GetAttribute('EntityId') then
-					handlers.misc:playLocalSound('entity.wither.spawn')
+					handlers.misc:playLocalSound('entity.arrow.hit_player', 0.18, 0.45)
 				end
 			end
 		end)
 	}
 
-	local snapshot
 	local startUse
 	local didMove
 
@@ -280,7 +288,7 @@ function handler:start()
 				st = state,
 				pressMs = (math.random() * 50) // 1
 			})
-			--attack(entity.State, (localState.position + Vector3.new(0, 1.62, 0)):Max(entity.State.position - Vector3.new(0.4, -0.1, 0.4)):Min(entity.State.position + Vector3.new(0.4, 1.9, 0.4)))
+
 			setthreadidentity(8)
 		end
 	end
@@ -385,6 +393,33 @@ function handler:start()
 	end
 end
 
+function handler:jab()
+	local entity = self.character
+
+	if entity then
+		local equipped = unstable.Hands.inv.hotbar[unstable.Hands.inv.selected]
+
+		if equipped and unstable.ItemTable[equipped.id].kind == 'spear' then
+			firePacket({
+				a = 'jab',
+				st = snapshot()
+			})
+
+			local lunge = equipped.ench and equipped.ench.lunge or 0
+			if lunge > 0 and lplr.Character:GetAttribute('CanSprint') then
+				tlayer:send('entity_velocity', {
+					id = entity.Id,
+					velocity = entity.velocity + ((self.aimC0.LookVector * Vector3.new(1, 0, 1)) * (0.458 * lunge))
+				})
+
+				unstable.Controller.lungedAt = unstable.Controller.tickCount
+			end
+
+			setthreadidentity(8)
+		end
+	end
+end
+
 function handler:addPlayers()
 	table.insert(self.connections, playersService.PlayerAdded:Connect(function(plr)
 		self:addPlayer(plr)
@@ -439,6 +474,7 @@ function handler:clean()
 		self.windhook = nil
 	end
 
+	snapshot = nil
 	self.botId = -1
 	self.firework = nil
 	self.sneaking = false
@@ -469,7 +505,8 @@ function handler:tick()
 				sound = 'entity.generic.'..entity.Using,
 				pos = pos,
 				volume = entity.Using == 'eat' and (math.random() > 0.5 and 0.5 or 1) or 0.5,
-				pitch = entity.Using == 'eat' and 1 + (math.random() - math.random()) * 0.2 or 0.9 + math.random() * 0.1
+				pitch = entity.Using == 'eat' and 1 + (math.random() - math.random()) * 0.2 or 0.9 + math.random() * 0.1,
+				source = 7
 			})
 
 			entity.SoundTimer = os.clock()
@@ -633,12 +670,26 @@ function handler:addEntity(char, plr)
 
 				table.insert(self.entities, entity)
 			else
+				for _, attribute in {'Food', 'Saturation'} do
+					table.insert(entity.Connections, lplr:GetAttributeChangedSignal(attribute):Connect(function()
+						tlayer:send('update_hunger', {
+							hunger = lplr:GetAttribute('Food') or 20,
+							saturation = lplr:GetAttribute('Saturation') or 20
+						})
+					end))
+				end
+
 				table.insert(entity.Connections, lplr:GetAttributeChangedSignal('Effects'):Connect(function()
 					self:processEffects()
 				end))
 
 				tlayer:send('held_item_slot', {
 					slot = (unstable.Hands.inv and unstable.Hands.inv.selected or 1) - 1
+				})
+
+				tlayer:send('update_hunger', {
+					hunger = lplr:GetAttribute('Food') or 20,
+					saturation = lplr:GetAttribute('Saturation') or 20
 				})
 
 				handlers.misc:replicateXP()

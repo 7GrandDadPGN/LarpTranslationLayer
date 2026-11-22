@@ -865,7 +865,7 @@ local SPackets = {
 		play_sound = (function()
 			return function(data)
 				local offset = #data.sound
-				local buf = buffer.create(24 + offset)
+				local buf = buffer.create(25 + offset)
 				buffer.writeu8(buf, 1, offset)
 				buffer.writestring(buf, 2, data.sound)
 				buffer.writei32(buf, 3 + offset, data.pos.X * 8)
@@ -873,6 +873,7 @@ local SPackets = {
 				buffer.writei32(buf, 11 + offset, data.pos.Z * 8)
 				buffer.writef32(buf, 15 + offset, data.volume or 1)
 				buffer.writef32(buf, 19 + offset, data.pitch or 1)
+				buffer.writeu8(buf, 23 + offset, data.source or 0)
 				return buf
 			end
 		end)(),
@@ -1001,6 +1002,14 @@ local SPackets = {
 				return buf
 			end
 		end)(),
+		update_hunger = (function()
+			return function(data)
+				local buf = buffer.create(9)
+				buffer.writef32(buf, 1, data.hunger)
+				buffer.writef32(buf, 5, data.saturation)
+				return buf
+			end
+		end)(),
 		window_items = (function()
 			return function(data)
 				local bufSize = 3
@@ -1091,7 +1100,7 @@ function tlayer:login()
 		tickloop = task.spawn(function()
 			repeat
 				self.game:tick()
-				task.wait(1 / 30)
+				task.wait(1 / 20)
 			until false
 		end)
 	end

@@ -1,6 +1,6 @@
 return function(data)
 	local offset = #data.sound
-	local buf = buffer.create(24 + offset)
+	local buf = buffer.create(25 + offset)
 	buffer.writeu8(buf, 1, offset)
 	buffer.writestring(buf, 2, data.sound)
 	buffer.writei32(buf, 3 + offset, data.pos.X * 8)
@@ -8,5 +8,6 @@ return function(data)
 	buffer.writei32(buf, 11 + offset, data.pos.Z * 8)
 	buffer.writef32(buf, 15 + offset, data.volume or 1)
 	buffer.writef32(buf, 19 + offset, data.pitch or 1)
+	buffer.writeu8(buf, 23 + offset, data.source or 0)
 	return buf
 end

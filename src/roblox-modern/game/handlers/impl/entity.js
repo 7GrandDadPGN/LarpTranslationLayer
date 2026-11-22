@@ -11,6 +11,7 @@ function convertToByte(num) {
 
 const self = class EntityHandler extends Handler {
 	spawned = false;
+	health = { health: 20, food: 19, foodSaturation: 0 };
 	roblox(socket) {
 		cSocket = socket;
 		// UNIVERSAL
@@ -131,10 +132,11 @@ const self = class EntityHandler extends Handler {
 				entity.dataWatcher.updateObject(9, packet.health);
 
 				if (packet.id == MCHandler.local.index) {
+					this.health.health = packet.health;
 					client.write('update_health', {
-						health: packet.health,
-						food: 19,
-						foodSaturation: 0
+						health: this.health.health,
+						food: this.health.food,
+						foodSaturation: this.health.foodSaturation
 					});
 
 					if (packet.health <= 0) {
@@ -142,6 +144,19 @@ const self = class EntityHandler extends Handler {
 					}
 				}
 			}
+		});
+
+		socket.on('update_hunger', (packet) => {
+			this.health.food = packet.hunger;
+			this.health.foodSaturation = packet.saturation;
+
+			if (this.health.health <= 0) return;
+
+			client.write('update_health', {
+				health: this.health.health,
+				food: this.health.food,
+				foodSaturation: this.health.foodSaturation
+			});
 		});
 
 		socket.on('entity_absorption', (packet) => {
@@ -327,7 +342,6 @@ const self = class EntityHandler extends Handler {
 			if (this.spawnPosition != undefined) return;
 			MCHandler.local.pos = { x: x, y: y, z: z };
 			MCHandler.local.onGround = flags.onGround;
-			MCHandler.world.update(MCHandler.local.pos);
 
 			cSocket.send(
 				packets.CLIENT.move({
@@ -370,7 +384,6 @@ const self = class EntityHandler extends Handler {
 			MCHandler.local.pitch = pitch;
 			MCHandler.local.pos = { x: x, y: y, z: z };
 			MCHandler.local.onGround = flags.onGround;
-			MCHandler.world.update(MCHandler.local.pos);
 
 			cSocket.send(
 				packets.CLIENT.move({
@@ -389,6 +402,7 @@ const self = class EntityHandler extends Handler {
 
 		client.on('tick_end', (packet) => {
 			if (MCHandler.world == undefined) return;
+			MCHandler.world.update(MCHandler.local.pos);
 			cSocket.send(packets.CLIENT['tick_end']());
 		});
 
@@ -442,6 +456,7 @@ const self = class EntityHandler extends Handler {
 		client = requeue ? client : undefined;
 		this.spawnPosition = {};
 		this.spawned = false;
+		this.health = { health: 20, food: 19, foodSaturation: 0 };
 	}
 	obtainHandlers(handlers, mchandler) {
 		tablist = handlers.tablist;

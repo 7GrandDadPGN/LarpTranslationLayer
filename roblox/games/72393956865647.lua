@@ -25,19 +25,19 @@ end
 (function()
 	tlayer:loadPackets(false)
 	slop = {
-		ChatController = require(replicatedStorage.Client.Controller_2.ChatController),
-		CombatController = require(replicatedStorage.Client.Controller_2.CombatController_2),
-		CameraController = require(replicatedStorage.Client.Controller_2.CameraController),
-		CharacterAnimator = require(replicatedStorage.Client.Controller_2.CharacterAnimator),
-		CharacterController = require(replicatedStorage.Client.Controller_2.CharacterController),
-		InventoryController = require(replicatedStorage.Client.Controller_2.InventoryController),
-		InputHistoryController = require(replicatedStorage.Client.Controller_2.InputHistoryController_2),
+		ChatController = require(replicatedStorage.Client.Controller_5.ChatController),
+		CombatController = require(replicatedStorage.Client.Controller_5.CombatController_5),
+		CameraController = require(replicatedStorage.Client.Controller_5.CameraController),
+		CharacterAnimator = require(replicatedStorage.Client.Controller_5.CharacterAnimator),
+		CharacterController = require(replicatedStorage.Client.Controller_5.CharacterController),
+		InventoryController = require(replicatedStorage.Client.Controller_5.InventoryController),
+		InputHistoryController = require(replicatedStorage.Client.Controller_5.InputHistoryController_5),
 		ItemLookup = require(replicatedStorage.Shared.ItemLookup),
-		ItemUseController = require(replicatedStorage.Client.Controller_2.ItemUseController),
-		EntityRenderer = require(replicatedStorage.Client.Controller_2.EntityRenderer),
-		EntitySoundRenderer = require(replicatedStorage.Client.Controller_2.EntitySoundRenderer),
-		MovementController = require(replicatedStorage.Client.Controller_2.MovementController_2),
-		ViewmodelController = require(replicatedStorage.Client.Controller_2.ViewmodelController),
+		ItemUseController = require(replicatedStorage.Client.Controller_5.ItemUseController),
+		EntityRenderer = require(replicatedStorage.Client.Controller_5.EntityRenderer),
+		EntitySoundRenderer = require(replicatedStorage.Client.Controller_5.EntitySoundRenderer),
+		MovementController = require(replicatedStorage.Client.Controller_5.MovementController_5),
+		ViewmodelController = require(replicatedStorage.Client.Controller_5.ViewmodelController),
 	}
 end)()
 
@@ -297,17 +297,17 @@ handlers.entity = (function()
 	
 	function handler:start()
 		local tickFunc, tickIndex = searchFor(searchFor(slop.MovementController.start, 'onRenderStep'), 'simulateTick')
-		local entities = debug.getupvalue(searchFor(slop.EntityRenderer.start, 'onEntityStates'), 14)
-		local attack = searchFor(searchFor(slop.CombatController.attackAtScreenPoint_2, 'attack'), 'hitEntity')
+		local entities = debug.getupvalue(searchFor(slop.EntityRenderer.start, 'onEntityStates'), 16)
+		local attack = searchFor(searchFor(searchFor(slop.CombatController.init, 'attackPending'), 'attack'), 'hitEntity')
 		local inputBeganFunc = searchFor(slop.InputHistoryController.init, 'onInputBegan')
 		local inputEndedFunc = searchFor(slop.InputHistoryController.init, 'onInputEnded')
 		local localState = debug.getupvalue(tickFunc, 6)
 	
 		self.oldtick = tickFunc
-		self.old = debug.getupvalue(tickFunc, 14)
+		self.old = debug.getupvalue(tickFunc, 15)
 	
 		modifyUpvalue(searchFor(slop.MovementController.start, 'onRenderStep'), tickIndex, function() end)
-		modifyUpvalue(tickFunc, 14, setmetatable({
+		modifyUpvalue(tickFunc, 15, setmetatable({
 			simulateTick = function(state)
 				local entity = handler.character
 	
@@ -607,7 +607,7 @@ handlers.entity = (function()
 				self.clickthread = nil
 			end)
 	
-			slop.ViewmodelController.swing_2()
+			slop.ViewmodelController.swing_5()
 			setthreadidentity(8)
 		end
 	

@@ -124,7 +124,7 @@ function tlayer:login()
 		tickloop = task.spawn(function()
 			repeat
 				self.game:tick()
-				task.wait(1 / 30)
+				task.wait(1 / 20)
 			until false
 		end)
 	end
