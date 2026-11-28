@@ -54,7 +54,7 @@ end
 
 function handler:start()
 	self.connections = {
-		replicatedStorage.MC.Remotes.Event.OnClientEvent:Connect(function(event, data)
+		replicatedStorage.GameShared.Remotes.Event.OnClientEvent:Connect(function(event, data)
 			if event == 'fx' and data.kind == 'break' then
 				self.blocks[data.pos // 1] = nil
 				self:write(0, data.pos // 1, nil, mapLoaded)

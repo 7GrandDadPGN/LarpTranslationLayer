@@ -31,7 +31,7 @@ local handler = {
 
 function handler:start()
 	self.connections = {
-		replicatedStorage.MC.Remotes.Event.OnClientEvent:Connect(function(event, data)
+		replicatedStorage.GameShared.Remotes.Event.OnClientEvent:Connect(function(event, data)
 			if event == 'hurt' then
 				local entity = handler:getEntity(data.id, true)
 				if entity then
@@ -177,10 +177,12 @@ function handler:start()
 	for _, temp in unstable.Controller.beforeTick do
 		if debug.info(temp, 's'):find('Hands') then
 			local func = debug.getupvalue(temp, 6)
-			if debug.info(func, 'n') == 'attack' then
-				snapshot = debug.getupvalue(debug.getupvalue(temp, 6), 15)
-			else
-				startUse = debug.getupvalue(temp, 6)
+			local func2 = debug.getupvalue(temp, 4)
+
+			if type(func) == 'function' and debug.info(func, 'n') == 'attack' then
+				snapshot = debug.getupvalue(func, 12)
+			elseif type(func2) == 'function' and debug.info(func2, 'n') == 'startUse' then
+				startUse = func2
 			end
 		end
 	end
@@ -189,9 +191,9 @@ function handler:start()
 		if bind.Name == 'MCController' then
 			self.aimState = debug.getupvalue(bind.Function, 1)
 			self.target = bind.Function
-			self.tickfunc = debug.getupvalue(self.target, 8)
+			self.tickfunc = debug.getupvalue(self.target, 7)
 			self.old = debug.getupvalue(self.tickfunc, 18)
-			debug.setupvalue(self.target, 8, function() end)
+			debug.setupvalue(self.target, 7, function() end)
 			debug.setupvalue(self.tickfunc, 18, setmetatable({
 				tick = function(...)
 					local state, input = ...
@@ -463,7 +465,7 @@ function handler:clean()
 
 	if self.target then
 		debug.setupvalue(self.tickfunc, 18, self.old)
-		debug.setupvalue(self.target, 8, self.tickfunc)
+		debug.setupvalue(self.target, 7, self.tickfunc)
 		self.target = nil
 		self.tickfunc = nil
 		self.old = nil
@@ -789,7 +791,7 @@ function handler:decodeArmor(id, armor)
 end
 
 function handler:updateArmor(id, slot, item)
-	local decoded = type(item) ~= 'string' and item or httpService:JSONDecode(item)
+	local decoded = type(item) ~= 'string' and item or item ~= '' and httpService:JSONDecode(item)
 	item = decoded and handlers.gui:convertItem(decoded) or {id = 0, count = 0}
 
 	tlayer:send('entity_equipment', {

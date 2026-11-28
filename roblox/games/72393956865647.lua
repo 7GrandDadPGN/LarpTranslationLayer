@@ -213,6 +213,7 @@ end)()
 
 handlers.entity = (function()
 	local BLOCK_SIZE = 3
+	local rand = Random.new()
 	
 	local handler = {
 		Name = 'entity',
@@ -308,7 +309,9 @@ handlers.entity = (function()
 	
 		modifyUpvalue(searchFor(slop.MovementController.start, 'onRenderStep'), tickIndex, function() end)
 		modifyUpvalue(tickFunc, 15, setmetatable({
-			simulateTick = function(state)
+			simulateTick = function(...)
+				local state = ...
+				local res = table.pack(self.old.simulateTick(...))
 				local entity = handler.character
 	
 				if entity and entity.pos then
@@ -318,7 +321,10 @@ handlers.entity = (function()
 					state.isOnGround = entity.onGround
 					state.isSprinting = handler.sprinting or false
 					state.isSneakHeld = handler.sneaking or false
+					state.pose = state.isSneakHeld and 'crouching' or 'standing'
 				end
+	
+				return unpack(res, 1, res.n)
 			end
 		}, {
 			__index = self.old
@@ -334,6 +340,7 @@ handlers.entity = (function()
 					})
 				end
 			end)
+	
 			return correct(...)
 		end)
 	
@@ -574,7 +581,7 @@ handlers.entity = (function()
 				entity.onGround = data.onGround
 				entity.pos = newCF
 				slop.CameraController.setLook(entity.yaw, entity.pitch)
-				tickFunc(0.01)
+				tickFunc(rand:NextNumber() * 0.02)
 				setthreadidentity(8)
 			end
 		end
@@ -589,8 +596,13 @@ handlers.entity = (function()
 		tlayer.listeners.attack = function(data)
 			local entity = self:getEntity(data.id)
 			if entity then
-				attack(entity.State, (localState.position + Vector3.new(0, 1.62, 0)):Max(entity.State.position - Vector3.new(0.4, -0.1, 0.4)):Min(entity.State.position + Vector3.new(0.4, 1.9, 0.4)))
+				local eyePos = localState.position + Vector3.new(0, 1.62, 0)
+				local hitPos = eyePos:Max(entity.State.hitPosition - Vector3.new(0.4, 0.1, 0.4)):Min(entity.State.hitPosition + Vector3.new(0.4, 1.9, 0.4))
+	
+				--if (eyePos - hitPos).Magnitude <= 3 then
+				attack(entity.State, hitPos, true)
 				setthreadidentity(8)
+				--end
 			end
 		end
 	
@@ -602,7 +614,7 @@ handlers.entity = (function()
 			end
 	
 			task.spawn(inputBeganFunc, inputObj, false)
-			self.clickthread = task.delay(0.02 + math.random() * 0.02, function()
+			self.clickthread = task.delay(0.02 + rand:NextNumber() * 0.02, function()
 				task.spawn(inputEndedFunc, inputObj, false)
 				self.clickthread = nil
 			end)

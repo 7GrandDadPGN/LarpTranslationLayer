@@ -17,7 +17,7 @@ local handler = {
 
 function handler:start()
 	self.connections = {
-		replicatedStorage.MC.Remotes.Event.OnClientEvent:Connect(function(event, data)
+		replicatedStorage.GameShared.Remotes.Event.OnClientEvent:Connect(function(event, data)
 			if event == 'inv' then
 				task.defer(function()
 					self:updateInv()

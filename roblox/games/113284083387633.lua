@@ -21,22 +21,22 @@ local function firePacket(data)
 		setthreadidentity(8)
 	end
 
-	replicatedStorage.MC.Remotes.Action:FireServer(data)
+	replicatedStorage.GameShared.Remotes.Action:FireServer(data)
 end
 
 (function()
 	tlayer:loadPackets(true)
 	unstable = {
-		Chat = require(lplr.PlayerScripts.MC.Chat),
-		Controller = require(lplr.PlayerScripts.MC.Controller),
-		FX = require(lplr.PlayerScripts.MC.FX),
-		Menus = require(lplr.PlayerScripts.MC.Menus),
-		Net = require(lplr.PlayerScripts.MC.Net),
-		Hands = require(lplr.PlayerScripts.MC.Hands),
-		World = require(lplr.PlayerScripts.MC.World)
+		Chat = require(lplr.PlayerScripts.Client.UI.InGame.Chat),
+		Controller = require(lplr.PlayerScripts.Client.Player.Controller),
+		FX = require(lplr.PlayerScripts.Client.Effects.FX),
+		Menus = require(lplr.PlayerScripts.Client.UI.Screens.Menus),
+		Net = require(lplr.PlayerScripts.Client.Core.Net),
+		Hands = require(lplr.PlayerScripts.Client.Player.Hands),
+		World = require(lplr.PlayerScripts.Client.WorldView.World)
 	}
 
-	unstable.ItemTable = debug.getupvalue(require(replicatedStorage.MC.Items).def, 2)
+	unstable.ItemTable = debug.getupvalue(require(replicatedStorage.GameShared.Data.Items.Items).def, 2)
 	unstable.PitchTable = debug.getupvalue(unstable.World.pitchOf, 1)
 end)()
 
@@ -328,7 +328,7 @@ handlers.entity = (function()
 	
 	function handler:start()
 		self.connections = {
-			replicatedStorage.MC.Remotes.Event.OnClientEvent:Connect(function(event, data)
+			replicatedStorage.GameShared.Remotes.Event.OnClientEvent:Connect(function(event, data)
 				if event == 'hurt' then
 					local entity = handler:getEntity(data.id, true)
 					if entity then
@@ -474,10 +474,12 @@ handlers.entity = (function()
 		for _, temp in unstable.Controller.beforeTick do
 			if debug.info(temp, 's'):find('Hands') then
 				local func = debug.getupvalue(temp, 6)
-				if debug.info(func, 'n') == 'attack' then
-					snapshot = debug.getupvalue(debug.getupvalue(temp, 6), 15)
-				else
-					startUse = debug.getupvalue(temp, 6)
+				local func2 = debug.getupvalue(temp, 4)
+	
+				if type(func) == 'function' and debug.info(func, 'n') == 'attack' then
+					snapshot = debug.getupvalue(func, 12)
+				elseif type(func2) == 'function' and debug.info(func2, 'n') == 'startUse' then
+					startUse = func2
 				end
 			end
 		end
@@ -486,9 +488,9 @@ handlers.entity = (function()
 			if bind.Name == 'MCController' then
 				self.aimState = debug.getupvalue(bind.Function, 1)
 				self.target = bind.Function
-				self.tickfunc = debug.getupvalue(self.target, 8)
+				self.tickfunc = debug.getupvalue(self.target, 7)
 				self.old = debug.getupvalue(self.tickfunc, 18)
-				debug.setupvalue(self.target, 8, function() end)
+				debug.setupvalue(self.target, 7, function() end)
 				debug.setupvalue(self.tickfunc, 18, setmetatable({
 					tick = function(...)
 						local state, input = ...
@@ -760,7 +762,7 @@ handlers.entity = (function()
 	
 		if self.target then
 			debug.setupvalue(self.tickfunc, 18, self.old)
-			debug.setupvalue(self.target, 8, self.tickfunc)
+			debug.setupvalue(self.target, 7, self.tickfunc)
 			self.target = nil
 			self.tickfunc = nil
 			self.old = nil
@@ -1086,7 +1088,7 @@ handlers.entity = (function()
 	end
 	
 	function handler:updateArmor(id, slot, item)
-		local decoded = type(item) ~= 'string' and item or httpService:JSONDecode(item)
+		local decoded = type(item) ~= 'string' and item or item ~= '' and httpService:JSONDecode(item)
 		item = decoded and handlers.gui:convertItem(decoded) or {id = 0, count = 0}
 	
 		tlayer:send('entity_equipment', {
@@ -1166,7 +1168,7 @@ handlers.gui = (function()
 	
 	function handler:start()
 		self.connections = {
-			replicatedStorage.MC.Remotes.Event.OnClientEvent:Connect(function(event, data)
+			replicatedStorage.GameShared.Remotes.Event.OnClientEvent:Connect(function(event, data)
 				if event == 'inv' then
 					task.defer(function()
 						self:updateInv()
@@ -1404,7 +1406,7 @@ handlers.misc = (function()
 		self:replicateXP()
 	
 		local chatfunc
-		for _, connection in getconnections(debug.getupvalue(unstable.Chat.close, 4).FocusLost) do
+		for _, connection in getconnections(debug.getupvalue(unstable.Chat.close, 4).TextBox.FocusLost) do
 			chatfunc = debug.getupvalue(connection.Function, 4)
 			break
 		end
@@ -1631,7 +1633,7 @@ handlers.world = (function()
 	
 	function handler:start()
 		self.connections = {
-			replicatedStorage.MC.Remotes.Event.OnClientEvent:Connect(function(event, data)
+			replicatedStorage.GameShared.Remotes.Event.OnClientEvent:Connect(function(event, data)
 				if event == 'fx' and data.kind == 'break' then
 					self.blocks[data.pos // 1] = nil
 					self:write(0, data.pos // 1, nil, mapLoaded)

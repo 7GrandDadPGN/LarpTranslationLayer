@@ -37,7 +37,7 @@ function handler:start()
 	self:replicateXP()
 
 	local chatfunc
-	for _, connection in getconnections(debug.getupvalue(unstable.Chat.close, 4).FocusLost) do
+	for _, connection in getconnections(debug.getupvalue(unstable.Chat.close, 4).TextBox.FocusLost) do
 		chatfunc = debug.getupvalue(connection.Function, 4)
 		break
 	end

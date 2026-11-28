@@ -21,22 +21,22 @@ local function firePacket(data)
 		setthreadidentity(8)
 	end
 
-	replicatedStorage.MC.Remotes.Action:FireServer(data)
+	replicatedStorage.GameShared.Remotes.Action:FireServer(data)
 end
 
 (function()
 	tlayer:loadPackets(true)
 	unstable = {
-		Chat = require(lplr.PlayerScripts.MC.Chat),
-		Controller = require(lplr.PlayerScripts.MC.Controller),
-		FX = require(lplr.PlayerScripts.MC.FX),
-		Menus = require(lplr.PlayerScripts.MC.Menus),
-		Net = require(lplr.PlayerScripts.MC.Net),
-		Hands = require(lplr.PlayerScripts.MC.Hands),
-		World = require(lplr.PlayerScripts.MC.World)
+		Chat = require(lplr.PlayerScripts.Client.UI.InGame.Chat),
+		Controller = require(lplr.PlayerScripts.Client.Player.Controller),
+		FX = require(lplr.PlayerScripts.Client.Effects.FX),
+		Menus = require(lplr.PlayerScripts.Client.UI.Screens.Menus),
+		Net = require(lplr.PlayerScripts.Client.Core.Net),
+		Hands = require(lplr.PlayerScripts.Client.Player.Hands),
+		World = require(lplr.PlayerScripts.Client.WorldView.World)
 	}
 
-	unstable.ItemTable = debug.getupvalue(require(replicatedStorage.MC.Items).def, 2)
+	unstable.ItemTable = debug.getupvalue(require(replicatedStorage.GameShared.Data.Items.Items).def, 2)
 	unstable.PitchTable = debug.getupvalue(unstable.World.pitchOf, 1)
 end)()
 
